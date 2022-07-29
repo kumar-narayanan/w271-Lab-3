@@ -306,10 +306,9 @@ plot_hist = geom_histogram(aes(y=..count..), bins = 40, color = "black",
 plot_theme = theme(plot.title = element_text(face = "bold", lineheight = 1),
                    axis.title.x=element_blank(), axis.text.y = element_blank())
 
-
 h1 = ggplot(traffic, aes(x = total_traffic_fatalities)) + 
                scale_x_continuous(name = "Total Fatal.") +
-               plot_hist + plot_theme + labs(x="Total Fatal.")
+               plot_hist + plot_theme
 
 h2 = ggplot(traffic, aes(x = log(total_traffic_fatalities))) + 
                scale_x_continuous(name = "Log(Total Fatal.)") +
@@ -384,6 +383,312 @@ grid.arrange(h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17,h18,
              top=quote("Fatalities, Log(Fatalities) Distribution"))
 ```
 
+boxplots of dependent variables across the states to show the heterogeneity of the fatality rates.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_st_1 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_traffic_fatalities), 
+             y = total_traffic_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total Fatality rate")
+
+box_st_2 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_weekend_fatalities), 
+             y = total_weekend_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd. Fatality rate")
+
+box_st_3 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_nighttime_fatalities), 
+             y = total_nighttime_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night Fatality rate")
+
+box_st_4 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_fatal_per_100_million_miles), 
+             y = total_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total per Mile Rate")
+
+box_st_5 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,weekend_fatal_per_100_million_miles), 
+             y = weekend_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd per Mile Rate")
+
+box_st_6 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,nighttime_fatal_per_100_million_miles), 
+             y = nighttime_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night per Mile Rate")
+
+box_st_7 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_fatalities_rate), 
+             y = total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total per Cap. Rate")
+
+box_st_8 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,weekend_accidents_rate), 
+             y = weekend_accidents_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd. per Cap. Rate")
+
+box_st_9 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,nighttime_fatalities_rate), 
+             y = nighttime_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night per Cap Rate")
+
+grid.arrange(box_st_1,box_st_2,box_st_3,box_st_4,box_st_5,box_st_6,box_st_7,
+             box_st_8,box_st_9,nrow = 9, ncol = 1,
+             top=quote("Boxplot of Fatalities by State 1980 - 2004"))
+```
+
+boxplots of dependent variables across the years to show the heterogeneity of the fatality rates.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_yr_1 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_traffic_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total Fatality rate")
+
+box_yr_2 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_weekend_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd. Fatality rate")
+
+box_yr_3 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_nighttime_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night Fatality rate")
+
+box_yr_4 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total per Mile Rate")
+
+box_yr_5 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = weekend_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd per Mile Rate")
+
+box_yr_6 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = nighttime_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night per Mile Rate")
+
+box_yr_7 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total per Cap. Rate")
+
+box_yr_8 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = weekend_accidents_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd. per Cap. Rate")
+
+box_yr_9 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = nighttime_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night per Cap Rate")
+
+grid.arrange(box_yr_1,box_yr_2,box_yr_3,box_yr_4,box_yr_5,box_yr_6,box_yr_7,
+             box_yr_8,box_yr_9, nrow = 9, ncol = 1,
+             top=quote("Boxplot of Fatalities over years 1980 - 2004"))
+```
+
+### EXPLANATORY VARIABLES
+Histograms
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+ex_h1 = ggplot(traffic, aes(x = minage)) + 
+               scale_x_continuous(name = "Minimum Age") +
+               plot_hist + plot_theme
+
+ex_h2 = ggplot(traffic, aes(x = log(minage))) + 
+               scale_x_continuous(name = "Log(Minimum Age)") +
+               plot_hist + plot_theme
+
+ex_h3 = ggplot(traffic, aes(x = state_population)) + 
+               scale_x_continuous(name = "State Population") +
+               plot_hist + plot_theme
+
+ex_h4 = ggplot(traffic, aes(x = log(state_population))) + 
+               scale_x_continuous(name = "Log(State Population)") +
+               plot_hist + plot_theme
+
+ex_h5 = ggplot(traffic, aes(x = vehicle_miles_traveled_billions)) + 
+               scale_x_continuous(name = "Miles Trvld") +
+               plot_hist + plot_theme
+
+ex_h6 = ggplot(traffic, aes(x = log(vehicle_miles_traveled_billions))) + 
+               scale_x_continuous(name = "Log(Miles Trvld)") +
+               plot_hist + plot_theme
+
+ex_h7 = ggplot(traffic, aes(x = unemployment_rate)) + 
+               scale_x_continuous(name = "Unemp. Rate") +
+               plot_hist + plot_theme
+
+ex_h8 = ggplot(traffic, aes(x = log(unemployment_rate))) + 
+               scale_x_continuous(name = "Log(Unemp. Rate)") +
+               plot_hist + plot_theme
+
+ex_h9 = ggplot(traffic, aes(x = percent_pop_aged_14_to_24)) + 
+               scale_x_continuous(name = "% Pop 14-24") +
+               plot_hist + plot_theme
+
+ex_h10 = ggplot(traffic, aes(x = log(percent_pop_aged_14_to_24))) + 
+               scale_x_continuous(name = "Log(% Pop 14-24)") +
+               plot_hist + plot_theme
+
+ex_h11 = ggplot(traffic, aes(x = number_of_miles_driven_per_capita)) + 
+               scale_x_continuous(name = "Miles Driven") +
+               plot_hist + plot_theme
+
+ex_h12 = ggplot(traffic, aes(x = log(number_of_miles_driven_per_capita))) + 
+               scale_x_continuous(name = "log(Miles Driven)") +
+               plot_hist + plot_theme
+
+ex_h13 = ggplot(traffic, aes(x = speed_limit)) + 
+               scale_x_continuous(name = "Speed Limit") +
+               plot_hist + plot_theme
+
+ex_h14 = ggplot(traffic, aes(x = log(speed_limit))) + 
+               scale_x_continuous(name = "Log(Speed Limit)") +
+               plot_hist + plot_theme
+
+grid.arrange(ex_h1,ex_h2,ex_h3,ex_h4,ex_h5,ex_h6,ex_h7,
+             ex_h8,ex_h9,ex_h10,ex_h11,ex_h12,ex_h13,ex_h14,
+             nrow = 7, ncol = 2,
+             top=quote("Distributions of Explanatory Variables and Logs"))
+```
+
+boxplots of EXPLANATORY variables across the states to show the heterogeneity.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_ex_1 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,state_population), 
+             y = state_population)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Population")
+
+box_ex_2 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,vehicle_miles_traveled_billions), 
+             y = vehicle_miles_traveled_billions)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Miles Travelled")
+
+box_ex_3 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,unemployment_rate), 
+             y = unemployment_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Unemp. rate")
+
+box_ex_4 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,percent_pop_aged_14_to_24), 
+             y = percent_pop_aged_14_to_24)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "% Pop. 14-24")
+
+box_ex_5 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,number_of_miles_driven_per_capita), 
+             y = number_of_miles_driven_per_capita)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Miles per Capita")
+
+box_ex_6 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,speed_limit), 
+             y = speed_limit)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Speed limit")
+
+grid.arrange(box_ex_1,box_ex_2,box_ex_3,box_ex_4,box_ex_5,box_ex_6,
+             nrow = 6, ncol = 1,
+             top=quote("Boxplot of Explanatory Variables by State"))
+```
+
+boxplots of explanatory variables across the years to show the heterogeneity.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_yr_ex_1 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = state_population)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "State Population")
+
+box_yr_ex_2 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = vehicle_miles_traveled_billions)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "Miles Travelled")
+
+box_yr_ex_3 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = unemployment_rate)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "Unemp. Rate")
+
+box_yr_ex_4 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = percent_pop_aged_14_to_24)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "% Pop. 14-24")
+
+box_yr_ex_5 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = number_of_miles_driven_per_capita)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Miles per Capita")
+
+box_yr_ex_6 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = speed_limit)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Speed Limit")
+
+grid.arrange(box_yr_ex_1,box_yr_ex_2,box_yr_ex_3,box_yr_ex_4,box_yr_ex_5,
+             box_yr_ex_6, nrow = 6, ncol = 1,
+             top=quote("Boxplot of Explanatory Variables over years"))
+```
 
 
 # (15 points) Preliminary Model

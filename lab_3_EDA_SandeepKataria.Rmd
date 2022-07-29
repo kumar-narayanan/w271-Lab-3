@@ -50,34 +50,16 @@ traffic = data
 
 ## please comment these calls in your work 
 glimpse(traffic)
-states <- data.frame("index"=1:51,"state"=sort(c(state.abb,"DC")))
+
+## Add State Abbreviations as a column labeled "State"
+states <- data.frame("index"=1:51,"abbr"=sort(c(state.abb,"DC")))
+traffic <- merge(traffic, states, by.x = "state", by.y = "index")
 ```
 ```{r}
 unique(traffic$sl70plus)
 ```
 
-##### Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 
-```{r}
-traffic = rename(traffic, grad_drivers_lic_law = gdl,
-                          adm_lic_revoc_law = perse,
-                          total_traffic_fatalities = totfat,
-                          total_nighttime_fatalities = nghtfat,
-                          total_weekend_fatalities = wkndfat,
-                          total_fatal_per_100_million_miles = totfatpvm,
-                          nighttime_fatal_per_100_million_miles = nghtfatpvm,
-                          weekend_fatal_per_100_million_miles = wkndfatpvm,
-                          state_population = statepop,
-                          total_fatal_per_million_pop = totfatrte,
-                          nighttime_fatal_per_million_pop = nghtfatrte,
-                          weekend_accidents_per_million_pop = wkndfatrte,
-                          vehicle_miles_traveled_billions = vehicmiles,
-                          unemployment_rate = unem,
-                          primary_seatbelt_law = sbprim,
-                          secondary_seatbelt_law = sbsecon,
-                          percent_pop_aged_14_to_24 = perc14_24,
-                          number_of_miles_driven_per_capita = vehicmilespc)
-```
 
 
 # (30 points, total) Build and Describe the Data 
@@ -95,7 +77,7 @@ traffic = rename(traffic, grad_drivers_lic_law = gdl,
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
 
-#### General EDA
+#### Q1 - PART 1 - Data Transformations
 ```{r}
 ## Variable names
 names(traffic)
@@ -171,6 +153,30 @@ traffic$blood_alc_lim_.08 = ifelse(traffic$bac08 >= 0.5, 1, 0)
 ```
 
 
+##### Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
+
+```{r}
+traffic = rename(traffic, grad_drivers_lic_law = gdl,
+                          adm_lic_revoc_law = perse,
+                          total_traffic_fatalities = totfat,
+                          total_nighttime_fatalities = nghtfat,
+                          total_weekend_fatalities = wkndfat,
+                          total_fatal_per_100_million_miles = totfatpvm,
+                          nighttime_fatal_per_100_million_miles = nghtfatpvm,
+                          weekend_fatal_per_100_million_miles = wkndfatpvm,
+                          state_population = statepop,
+                          total_fatalities_rate = totfatrte,
+                          nighttime_fatalities_rate = nghtfatrte,
+                          weekend_accidents_rate = wkndfatrte,
+                          vehicle_miles_traveled_billions = vehicmiles,
+                          unemployment_rate = unem,
+                          primary_seatbelt_law = sbprim,
+                          secondary_seatbelt_law = sbsecon,
+                          percent_pop_aged_14_to_24 = perc14_24,
+                          number_of_miles_driven_per_capita = vehicmilespc,
+                          State = abbr)
+```
+
 
 ```{r}
 ## convert data frame to pdata.frame
@@ -183,7 +189,200 @@ ptraffic <- pdata.frame(traffic, index=c("state", "year"))
 pdim(ptraffic)
 ```
 
+```{r}
+ptraffic
+```
 
+#### Q1 - PART-2 - Data Description
+
+(5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+
+#### Q1 - PART-3 - EDA
+(20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+    - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+
+As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
+```{r, fig.height=3, fig.width=8, fig.align='center'}
+annual_avg <- data %>%
+  group_by(year) %>%
+  summarise(avg_tot_fatalities = mean(totfatrte))
+annual_avg %>%
+  ggplot(aes(x = year, y = avg_tot_fatalities)) +
+  geom_line(size = 1, colour = "red") +
+  geom_smooth(method = 'lm', se = FALSE, size = 0.5, colour="blue") +
+  labs(title = "Average Total Fatality rate from 1980-2004", y = "Avg total fatalities", x = "Time (year)") +
+  xlim(c(1980, 2005)) +
+  theme_minimal()
+```
+
+
+```{r,warning=FALSE,echo=FALSE, fig.height=6, fig.width=12}
+# Line plot for each state separated by color
+
+p1<- ptraffic %>%
+  filter(as.integer(state) <= 12 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Total Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) <= 12  & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p2<- ptraffic %>%
+   filter(as.integer(state) > 12 & as.integer(state) <= 24 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 12 & as.integer(state) <= 24  & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p3<- ptraffic %>%
+  filter(as.integer(state) > 24 &as.integer(state) <= 36 ) %>%
+  ggplot(aes(x = as.integer(year), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 24 &as.integer(state) <= 36 & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p4<- ptraffic %>%
+  filter(as.integer(state) > 36 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate") +
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 36 & year == 1984),aes(label = state),
+                   nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+grid.arrange(p1,p2,p3, p4, nrow = 2, ncol = 2)
+```
+
+```{r,warning=FALSE, echo=FALSE, fig.height=6, fig.width=12}
+p5<- ptraffic %>%
+  filter(as.integer(state) <= 12 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3) +
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p6<-ptraffic %>%
+  filter(as.integer(state) > 12 & as.integer(state) <= 24 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p7<-ptraffic %>%
+  filter(as.integer(state) > 24 &as.integer(state) <= 36 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p8<- ptraffic %>%
+  filter(as.integer(state) > 36 ) %>%
+  ggplot(aes(x =as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line()+
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+grid.arrange(p5,p6,p7,p8, nrow = 2, ncol = 2)
+```
+
+### DEPENDANT VARIABLES DISTRIBUTION
+
+```{r,warning=FALSE, echo=FALSE, fig.height=8, fig.width=8}
+# Distribution of Original vs. Logarithm of various dependent fatalities 
+# variables 
+plot_hist = geom_histogram(aes(y=..count..), bins = 40, color = "black", 
+                           fill = "blue")
+plot_theme = theme(plot.title = element_text(face = "bold", lineheight = 1),
+                   axis.title.x=element_blank(), axis.text.y = element_blank())
+
+
+h1 = ggplot(traffic, aes(x = total_traffic_fatalities)) + 
+               scale_x_continuous(name = "Total Fatal.") +
+               plot_hist + plot_theme + labs(x="Total Fatal.")
+
+h2 = ggplot(traffic, aes(x = log(total_traffic_fatalities))) + 
+               scale_x_continuous(name = "Log(Total Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h3 = ggplot(traffic, aes(x = total_weekend_fatalities)) +
+               scale_x_continuous(name = "Wknd. Fatal.") +
+               plot_hist + plot_theme
+
+h4 = ggplot(traffic, aes(x = log(total_weekend_fatalities))) +
+               scale_x_continuous(name = "Log(Wknd. Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h5 = ggplot(traffic, aes(x = total_nighttime_fatalities)) +
+               scale_x_continuous(name = "Night Fatal.") +
+               plot_hist + plot_theme
+
+h6 = ggplot(traffic, aes(x = log(total_nighttime_fatalities))) +
+               scale_x_continuous(name = "Log(Night Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h7 = ggplot(traffic, aes(x = total_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Total per Mile Rate") +
+               plot_hist + plot_theme
+
+h8 = ggplot(traffic, aes(x = log(total_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Total per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h9 = ggplot(traffic, aes(x = weekend_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Wknd per Mile Rate") +
+               plot_hist + plot_theme
+
+h10 = ggplot(traffic, aes(x = log(weekend_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Wknd per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h11 = ggplot(traffic, aes(x = nighttime_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Night per Mile Rate") +
+               plot_hist + plot_theme
+
+h12 = ggplot(traffic, aes(x = log(nighttime_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Night per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h13 = ggplot(traffic, aes(x = total_fatalities_rate)) +
+               scale_x_continuous(name = "Total per Cap Rate") +
+               plot_hist + plot_theme
+
+h14 = ggplot(traffic, aes(x = log(total_fatalities_rate))) +
+               scale_x_continuous(name = "Log(Total per Cap Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h15 = ggplot(traffic, aes(x = weekend_accidents_rate)) +
+               scale_x_continuous(name = "Wknd per Cap Rate") +
+               plot_hist + plot_theme
+
+h16 = ggplot(traffic, aes(x = log(weekend_accidents_rate))) +
+               scale_x_continuous(name = "Log(Wknd per Cap Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h17 = ggplot(traffic, aes(x = nighttime_fatalities_rate)) +
+               scale_x_continuous(name = "Night per Cap Rate") +
+               plot_hist + plot_theme
+
+h18 = ggplot(traffic, aes(x = log(nighttime_fatalities_rate))) +
+               scale_x_continuous(name = "Log(Night per Cap Rate)") +
+               plot_hist + plot_theme
+
+grid.arrange(h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17,h18,
+             nrow = 5, ncol = 4,
+             top=quote("Fatalities, Log(Fatalities) Distribution"))
+```
 
 
 

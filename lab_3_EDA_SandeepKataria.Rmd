@@ -769,6 +769,70 @@ expanded_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + 
                 data = traffic) 
 summary(expanded_model)
 ```
+## Transformation Details
+
+## Why a transformation is needed?
+
+When dealing with statistics there are times when data get skewed by having 
+a high concentration at the one end and lower values at the other end. These 
+results in a peak towards one end that trails off. One way of dealing with this 
+type of data is to use a logarithmic scale to give it a more normal pattern to 
+the data. By doing a logarithmic transformation on your original data distribution, 
+you can give it a better normality assumption, making it easier for any statistical 
+tests to be performed on.
+
+Also, weather the transformation yield better results will be measured by 
+Shapiro-Wilk test, which is a great way to see if a variable is normally 
+distributed. The data is normal if the p-value is above 0.05. This is an 
+important assumption in creating any sort of model and also evaluating models. 
+
+##Independent Variables
+
+1) d81, d82, ..., d04
+
+Discrete distribution with two values
+
+2) bac08, bac10
+
+3) adm_lic_revoc_law
+
+4) primary_seatbelt_law, secondary_seatbelt_law
+
+5) sl75, slnone
+
+6) grad_drivers_lic_law
+
+7) percent_pop_aged_14_to_24
+
+8) unemployment_rate
+```{r shapiro unemployment_rate}
+summary(traffic$unemployment_rate)
+summary(log(traffic$unemployment_rate))
+shapiro.test(log(traffic$unemployment_rate))
+shapiro.test(traffic$unemployment_rate)
+```
+
+The data distribution of the independent variable `unemployment_rate`
+illustrates positive skew (or right-skewed) with a mean value of 5.951 greater than the 
+median value of 5.600. Also the 3rd and 4th Quartile are 4x the size of the first two 
+Quartiles. A log transformation of this data will make the distribution normal with a mean
+and median of 1.7273 and 1.7228 respectively, with the spread of 1.0 between the first 
+and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
+log data distribution is normal - p-value of 0.2991 vs 2.2e-16.
+
+9) number_of_miles_driven_per_capita
+```{r shapiro number_of_miles_driven_per_capita}
+shapiro.test(log(traffic$number_of_miles_driven_per_capita))
+shapiro.test(traffic$number_of_miles_driven_per_capita)
+```
+
+The data distribution of the independent variable `number_of_miles_driven_per_capita`
+illustrates positive skew (or right-skewed) with a mean value of 9129 greater than the 
+median value of 9013. Also the 3rd and 4th Quartile are double the size of the first two 
+Quartiles. A log transformation of this data will make the distribution normal with a mean
+and median of 9.100 and 9.106 respectively, with the spread of 0.7 between the first 
+and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
+log data distribution is far better than the one without - p-value of 0.0003426 vs 9.81e-15.
 
 # (15 points) State-Level Fixed Effects 
 
@@ -782,6 +846,10 @@ Which set of estimates do you think is more reliable? Why do you think this?
 
 - What assumptions are needed in each of these models?  
 - Are these assumptions reasonable in the current context?
+
+
+```{r State-Level Fixed Effects}
+```
 
 # (10 points) Consider a Random Effects Model 
 

@@ -812,8 +812,8 @@ shapiro.test(traffic$unemployment_rate)
 
 The data distribution of the independent variable `unemployment_rate`
 illustrates positive skew (or right-skewed) with a mean value of 5.951 greater than the 
-median value of 5.600. Also the 3rd and 4th Quartile are 4x the size of the first two 
-Quartiles. A log transformation of this data will make the distribution normal with a mean
+median value of 5.600. Also the 3rd and 4th Quantile are 4x the size of the first two 
+Quantiles. A log transformation of this data will make the distribution normal with a mean
 and median of 1.7273 and 1.7228 respectively, with the spread of 1.0 between the first 
 and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
 log data distribution with p-value of 0.2991 vs 2.2e-16.
@@ -826,8 +826,8 @@ shapiro.test(traffic$number_of_miles_driven_per_capita)
 
 The data distribution of the independent variable `number_of_miles_driven_per_capita`
 illustrates positive skew (or right-skewed) with a mean value of 9129 greater than the 
-median value of 9013. Also the 3rd and 4th Quartile are double the size of the first two 
-Quartiles. A log transformation of this data will make the distribution normal with a mean
+median value of 9013. Also the 3rd and 4th Quantile are double the size of the first two 
+Quantiles. A log transformation of this data will make the distribution normal with a mean
 and median of 9.100 and 9.106 respectively, with the spread of 0.7 between the first 
 and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
 log data distribution is far better than the one without log transformation. The 
@@ -848,6 +848,7 @@ Which set of estimates do you think is more reliable? Why do you think this?
 
 
 ```{r State-Level Fixed Effects}
+
 ```
 
 # (10 points) Consider a Random Effects Model 

@@ -818,7 +818,7 @@ median value of 5.600. Also the 3rd and 4th Quartile are 4x the size of the firs
 Quartiles. A log transformation of this data will make the distribution normal with a mean
 and median of 1.7273 and 1.7228 respectively, with the spread of 1.0 between the first 
 and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
-log data distribution is normal - p-value of 0.2991 vs 2.2e-16.
+log data distribution with p-value of 0.2991 vs 2.2e-16.
 
 9) number_of_miles_driven_per_capita
 ```{r shapiro number_of_miles_driven_per_capita}
@@ -832,7 +832,8 @@ median value of 9013. Also the 3rd and 4th Quartile are double the size of the f
 Quartiles. A log transformation of this data will make the distribution normal with a mean
 and median of 9.100 and 9.106 respectively, with the spread of 0.7 between the first 
 and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
-log data distribution is far better than the one without - p-value of 0.0003426 vs 9.81e-15.
+log data distribution is far better than the one without log transformation. The 
+p-value of 0.0003426 vs 9.81e-15, for with and without transformation is evident.
 
 # (15 points) State-Level Fixed Effects 
 

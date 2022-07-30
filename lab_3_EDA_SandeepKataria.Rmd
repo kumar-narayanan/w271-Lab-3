@@ -759,6 +759,17 @@ If it is appropriate, include transformations of these variables. Please careful
 - Do *per se laws* have a negative effect on the fatality rate? 
 - Does having a primary seat belt law? 
 
+```{r Expanded Model}
+expanded_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04, bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                data = traffic) 
+summary(expanded_model)
+```
+
 # (15 points) State-Level Fixed Effects 
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 

@@ -806,8 +806,6 @@ Discrete distribution with two values
 
 8) unemployment_rate
 ```{r shapiro unemployment_rate}
-summary(traffic$unemployment_rate)
-summary(log(traffic$unemployment_rate))
 shapiro.test(log(traffic$unemployment_rate))
 shapiro.test(traffic$unemployment_rate)
 ```

@@ -146,10 +146,10 @@ traffic$year_of_observation = ifelse(traffic$d80 == 1, 1980,
 ##### Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series)
 ```{r}
 unique(traffic$bac10)
-traffic$blood_alc_lim_.10 = ifelse(traffic$bac10 >= 0.5, 1, 0)
+traffic$blood_alc_lim_10 = ifelse(traffic$bac10 >= 0.5, 1, 0)
 
 unique(traffic$bac08)
-traffic$blood_alc_lim_.08 = ifelse(traffic$bac08 >= 0.5, 1, 0)
+traffic$blood_alc_lim_08 = ifelse(traffic$bac08 >= 0.5, 1, 0)
 ```
 
 
@@ -690,6 +690,35 @@ grid.arrange(box_yr_ex_1,box_yr_ex_2,box_yr_ex_3,box_yr_ex_4,box_yr_ex_5,
              top=quote("Boxplot of Explanatory Variables over years"))
 ```
 
+### Total Fatality Rate vs Explanatory Variables OVER STATES
+
+```{r}
+annual_mean <- aggregate(traffic[, c("total_fatalities_rate", 
+                                      "state_population",
+                                      "unemployment_rate",
+                                      "percent_pop_aged_14_to_24",
+                                      "vehicle_miles_traveled_billions",
+                                      "number_of_miles_driven_per_capita")], 
+                         traffic["year"], FUN = mean)
+ggpairs(annual_mean, size = 5, cardinality_threshold=25) + 
+  ggtitle(label = "State Averages over time (years)")
+```
+
+### Total Fatality Rate vs Explanatory Variables OVER YEARS
+
+```{r}
+state_mean <- aggregate(traffic[, c("total_fatalities_rate", 
+                                    "state_population",
+                                    "unemployment_rate",
+                                    "percent_pop_aged_14_to_24",
+                                    "vehicle_miles_traveled_billions",
+                                    "number_of_miles_driven_per_capita")], 
+                         traffic["State"], FUN = mean)
+ggpairs(state_mean, size = 5, cardinality_threshold=60) + 
+  ggtitle(label = "Year Averages over State")
+```
+
+
 
 # (15 points) Preliminary Model
 
@@ -701,6 +730,14 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+
+```{r}
+base_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04, data = traffic) 
+summary(base_model)
+```
+
 
 # (15 points) Expanded Model 
 

@@ -848,7 +848,7 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - Are these assumptions reasonable in the current context?
 
 
-```{r State-Level Fixed Effects}
+```{r Fixed Effects models}
 traffic.new.row <- traffic
 row.names(traffic.new.row) <- NULL
 within.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
@@ -858,6 +858,25 @@ within.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + 
                 + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
                 + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
                     data=traffic.new.row, index=c("state", "year"), model="within")
+between.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                    data=traffic.new.row, index=c("state", "year"), model="between")
+fd.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                    data=traffic.new.row, index=c("state", "year"), model="fd")
+```
+
+```{r summary fixed effects}
+summary(fd.model)
+summary(between.model)
 summary(within.model)
 ```
 

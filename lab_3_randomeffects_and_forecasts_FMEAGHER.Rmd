@@ -1,0 +1,989 @@
+---
+title: 'Lab 3: Panel Models'
+subtitle: 'US Traffic Fatalities: 1980 - 2004'
+output: 
+  bookdown::pdf_document2: default
+---
+
+```{r}
+# Start with a clean R environment
+rm(list = ls())
+
+```
+
+
+
+```{r load packages, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(gridExtra)
+library(stargazer)
+library(xtable)
+library(Hmisc)
+library(GGally)
+library(plm)
+library(vcd)
+library(ggrepel)
+library(tidyr)
+```
+
+
+# U.S. traffic fatalities: 1980-2004
+
+In this lab, we are asking you to answer the following **causal** question: 
+
+> **"Do changes in traffic laws affect traffic fatalities?"**  
+
+To answer this question, please complete the tasks specified below using the data provided in `data/driving.Rdata`. This data includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
+
+```{r load data, echo = TRUE}
+load(file="./data/driving.RData")
+desc
+
+desc$label <- as.character(desc$label)
+traffic = data
+
+## please comment these calls in your work 
+glimpse(traffic)
+
+## Add State Abbreviations as a column labeled "State"
+states <- data.frame("index"=1:51,"abbr"=sort(c(state.abb,"DC")))
+traffic <- merge(traffic, states, by.x = "state", by.y = "index")
+```
+```{r}
+unique(traffic$sl70plus)
+```
+
+
+# (30 points, total) Build and Describe the Data 
+
+1. (5 points) Load the data and produce useful features. Specifically: 
+    - Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`; 
+    - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
+    - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
+    - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
+2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+3. (20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+    - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+
+As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
+#### Q1 - PART 1 - Data Transformations
+```{r}
+## Variable names
+names(traffic)
+```
+
+```{r}
+# check the  dimension and structure of the traffic set
+
+dim(traffic)
+#str(traffic)
+#head(traffic)
+```
+
+```{r}
+# check if it's balanced
+traffic %>%
+  dplyr::select(year, state) %>%
+  table()
+```
+
+```{r}
+# Check for gaps in the time series of each state
+traffic%>%
+  is.pconsecutive()
+```
+
+##### Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`;
+
+```{r}
+traffic$speed_limit = ifelse(traffic$sl55 >= 0.5, 55,
+                             ifelse(traffic$sl65 >= 0.5, 65,
+                              ifelse(traffic$sl70 >= 0.5, 70,
+                                ifelse(traffic$sl75 >= 0.5, 75, 0))))
+```
+
+##### Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`
+
+```{r}
+traffic$year_of_observation = ifelse(traffic$d80 == 1, 1980,
+                              ifelse(traffic$d81 == 1, 1981,
+                              ifelse(traffic$d82 == 1, 1982,
+                              ifelse(traffic$d83 == 1, 1983,
+                              ifelse(traffic$d84 == 1, 1984,
+                              ifelse(traffic$d85 == 1, 1985,
+                              ifelse(traffic$d86 == 1, 1986,
+                              ifelse(traffic$d87 == 1, 1987,
+                              ifelse(traffic$d88 == 1, 1988,
+                              ifelse(traffic$d89 == 1, 1989,
+                              ifelse(traffic$d90 == 1, 1990,
+                              ifelse(traffic$d91 == 1, 1991,
+                              ifelse(traffic$d92 == 1, 1992,
+                              ifelse(traffic$d93 == 1, 1993,
+                              ifelse(traffic$d94 == 1, 1994,
+                              ifelse(traffic$d95 == 1, 1995,
+                              ifelse(traffic$d96 == 1, 1996,
+                              ifelse(traffic$d97 == 1, 1997,
+                              ifelse(traffic$d98 == 1, 1998,
+                              ifelse(traffic$d99 == 1, 1999,
+                              ifelse(traffic$d00 == 1, 2000,
+                              ifelse(traffic$d01 == 1, 2001,
+                              ifelse(traffic$d02 == 1, 2002,
+                              ifelse(traffic$d03 == 1, 2003, 
+                                     2004))))))))))))))))))))))))
+```
+
+##### Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series)
+```{r}
+unique(traffic$bac10)
+traffic$blood_alc_lim_10 = ifelse(traffic$bac10 >= 0.5, 1, 0)
+
+unique(traffic$bac08)
+traffic$blood_alc_lim_08 = ifelse(traffic$bac08 >= 0.5, 1, 0)
+```
+
+
+##### Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
+
+```{r}
+traffic = rename(traffic, grad_drivers_lic_law = gdl,
+                          adm_lic_revoc_law = perse,
+                          total_traffic_fatalities = totfat,
+                          total_nighttime_fatalities = nghtfat,
+                          total_weekend_fatalities = wkndfat,
+                          total_fatal_per_100_million_miles = totfatpvm,
+                          nighttime_fatal_per_100_million_miles = nghtfatpvm,
+                          weekend_fatal_per_100_million_miles = wkndfatpvm,
+                          state_population = statepop,
+                          total_fatalities_rate = totfatrte,
+                          nighttime_fatalities_rate = nghtfatrte,
+                          weekend_accidents_rate = wkndfatrte,
+                          vehicle_miles_traveled_billions = vehicmiles,
+                          unemployment_rate = unem,
+                          primary_seatbelt_law = sbprim,
+                          secondary_seatbelt_law = sbsecon,
+                          percent_pop_aged_14_to_24 = perc14_24,
+                          number_of_miles_driven_per_capita = vehicmilespc,
+                          State = abbr)
+```
+
+
+```{r}
+## convert data frame to pdata.frame
+ptraffic <- pdata.frame(traffic, index=c("state", "year"))
+```
+
+```{r}
+
+## Check the structure of panel data
+pdim(ptraffic)
+```
+
+```{r}
+ptraffic
+```
+
+#### Q1 - PART-2 - Data Description
+
+(5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+
+#### Q1 - PART-3 - EDA
+(20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
+    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+    - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+
+As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
+```{r, fig.height=3, fig.width=8, fig.align='center'}
+annual_avg <- data %>%
+  group_by(year) %>%
+  summarise(avg_tot_fatalities = mean(totfatrte))
+annual_avg %>%
+  ggplot(aes(x = year, y = avg_tot_fatalities)) +
+  geom_line(size = 1, colour = "red") +
+  geom_smooth(method = 'lm', se = FALSE, size = 0.5, colour="blue") +
+  labs(title = "Average Total Fatality rate from 1980-2004", y = "Avg total fatalities", x = "Time (year)") +
+  xlim(c(1980, 2005)) +
+  theme_minimal()
+```
+
+
+```{r,warning=FALSE,echo=FALSE, fig.height=6, fig.width=12}
+# Line plot for each state separated by color
+
+p1<- ptraffic %>%
+  filter(as.integer(state) <= 12 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Total Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) <= 12  & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p2<- ptraffic %>%
+   filter(as.integer(state) > 12 & as.integer(state) <= 24 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 12 & as.integer(state) <= 24  & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p3<- ptraffic %>%
+  filter(as.integer(state) > 24 &as.integer(state) <= 36 ) %>%
+  ggplot(aes(x = as.integer(year), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate")+
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 24 &as.integer(state) <= 36 & year == 1984),
+                   aes(label = state), nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+p4<- ptraffic %>%
+  filter(as.integer(state) > 36 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line(aes(color = state)) +
+  labs(x = "Year",  y = "Fatality rate") +
+  geom_label_repel(data = filter(ptraffic, as.integer(state) > 36 & year == 1984),aes(label = state),
+                   nudge_x = .75,na.rm = TRUE) +
+  theme(legend.position = "none")
+
+grid.arrange(p1,p2,p3, p4, nrow = 2, ncol = 2)
+```
+
+```{r,warning=FALSE, echo=FALSE, fig.height=6, fig.width=12}
+p5<- ptraffic %>%
+  filter(as.integer(state) <= 12 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3) +
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p6<-ptraffic %>%
+  filter(as.integer(state) > 12 & as.integer(state) <= 24 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p7<-ptraffic %>%
+  filter(as.integer(state) > 24 &as.integer(state) <= 36 ) %>%
+  ggplot(aes(x = as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line() +
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+
+p8<- ptraffic %>%
+  filter(as.integer(state) > 36 ) %>%
+  ggplot(aes(x =as.Date(year,"%Y"), y = total_fatalities_rate)) +
+  geom_line()+
+  facet_wrap(~ state, nrow = 3)+
+  labs(x = "Year",  y = "Fatality rate") +
+  theme(legend.position = "none")
+grid.arrange(p5,p6,p7,p8, nrow = 2, ncol = 2)
+```
+
+### DEPENDANT VARIABLES DISTRIBUTION
+
+```{r,warning=FALSE, echo=FALSE, fig.height=8, fig.width=8}
+# Distribution of Original vs. Logarithm of various dependent fatalities 
+# variables 
+plot_hist = geom_histogram(aes(y=..count..), bins = 40, color = "black", 
+                           fill = "blue")
+plot_theme = theme(plot.title = element_text(face = "bold", lineheight = 1),
+                   axis.title.x=element_blank(), axis.text.y = element_blank())
+
+h1 = ggplot(traffic, aes(x = total_traffic_fatalities)) + 
+               scale_x_continuous(name = "Total Fatal.") +
+               plot_hist + plot_theme
+
+h2 = ggplot(traffic, aes(x = log(total_traffic_fatalities))) + 
+               scale_x_continuous(name = "Log(Total Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h3 = ggplot(traffic, aes(x = total_weekend_fatalities)) +
+               scale_x_continuous(name = "Wknd. Fatal.") +
+               plot_hist + plot_theme
+
+h4 = ggplot(traffic, aes(x = log(total_weekend_fatalities))) +
+               scale_x_continuous(name = "Log(Wknd. Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h5 = ggplot(traffic, aes(x = total_nighttime_fatalities)) +
+               scale_x_continuous(name = "Night Fatal.") +
+               plot_hist + plot_theme
+
+h6 = ggplot(traffic, aes(x = log(total_nighttime_fatalities))) +
+               scale_x_continuous(name = "Log(Night Fatal.)") +
+               plot_hist + plot_theme + plot_theme
+
+h7 = ggplot(traffic, aes(x = total_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Total per Mile Rate") +
+               plot_hist + plot_theme
+
+h8 = ggplot(traffic, aes(x = log(total_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Total per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h9 = ggplot(traffic, aes(x = weekend_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Wknd per Mile Rate") +
+               plot_hist + plot_theme
+
+h10 = ggplot(traffic, aes(x = log(weekend_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Wknd per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h11 = ggplot(traffic, aes(x = nighttime_fatal_per_100_million_miles)) +
+               scale_x_continuous(name = "Night per Mile Rate") +
+               plot_hist + plot_theme
+
+h12 = ggplot(traffic, aes(x = log(nighttime_fatal_per_100_million_miles))) +
+               scale_x_continuous(name = "Log(Night per Mile Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h13 = ggplot(traffic, aes(x = total_fatalities_rate)) +
+               scale_x_continuous(name = "Total per Cap Rate") +
+               plot_hist + plot_theme
+
+h14 = ggplot(traffic, aes(x = log(total_fatalities_rate))) +
+               scale_x_continuous(name = "Log(Total per Cap Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h15 = ggplot(traffic, aes(x = weekend_accidents_rate)) +
+               scale_x_continuous(name = "Wknd per Cap Rate") +
+               plot_hist + plot_theme
+
+h16 = ggplot(traffic, aes(x = log(weekend_accidents_rate))) +
+               scale_x_continuous(name = "Log(Wknd per Cap Rate)") +
+               plot_hist + plot_theme + plot_theme
+
+h17 = ggplot(traffic, aes(x = nighttime_fatalities_rate)) +
+               scale_x_continuous(name = "Night per Cap Rate") +
+               plot_hist + plot_theme
+
+h18 = ggplot(traffic, aes(x = log(nighttime_fatalities_rate))) +
+               scale_x_continuous(name = "Log(Night per Cap Rate)") +
+               plot_hist + plot_theme
+
+grid.arrange(h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17,h18,
+             nrow = 5, ncol = 4,
+             top=quote("Fatalities, Log(Fatalities) Distribution"))
+```
+
+boxplots of dependent variables across the states to show the heterogeneity of the fatality rates.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_st_1 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_traffic_fatalities), 
+             y = total_traffic_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total Fatality rate")
+
+box_st_2 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_weekend_fatalities), 
+             y = total_weekend_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd. Fatality rate")
+
+box_st_3 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_nighttime_fatalities), 
+             y = total_nighttime_fatalities)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night Fatality rate")
+
+box_st_4 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_fatal_per_100_million_miles), 
+             y = total_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total per Mile Rate")
+
+box_st_5 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,weekend_fatal_per_100_million_miles), 
+             y = weekend_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd per Mile Rate")
+
+box_st_6 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,nighttime_fatal_per_100_million_miles), 
+             y = nighttime_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night per Mile Rate")
+
+box_st_7 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,total_fatalities_rate), 
+             y = total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Total per Cap. Rate")
+
+box_st_8 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,weekend_accidents_rate), 
+             y = weekend_accidents_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Wknd. per Cap. Rate")
+
+box_st_9 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,nighttime_fatalities_rate), 
+             y = nighttime_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Night per Cap Rate")
+
+grid.arrange(box_st_1,box_st_2,box_st_3,box_st_4,box_st_5,box_st_6,box_st_7,
+             box_st_8,box_st_9,nrow = 9, ncol = 1,
+             top=quote("Boxplot of Fatalities by State 1980 - 2004"))
+```
+
+boxplots of dependent variables across the years to show the heterogeneity of the fatality rates.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_yr_1 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_traffic_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total Fatality rate")
+
+box_yr_2 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_weekend_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd. Fatality rate")
+
+box_yr_3 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_nighttime_fatalities)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night Fatality rate")
+
+box_yr_4 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total per Mile Rate")
+
+box_yr_5 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = weekend_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd per Mile Rate")
+
+box_yr_6 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = nighttime_fatal_per_100_million_miles)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night per Mile Rate")
+
+box_yr_7 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Total per Cap. Rate")
+
+box_yr_8 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = weekend_accidents_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Wknd. per Cap. Rate")
+
+box_yr_9 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = nighttime_fatalities_rate)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Night per Cap Rate")
+
+grid.arrange(box_yr_1,box_yr_2,box_yr_3,box_yr_4,box_yr_5,box_yr_6,box_yr_7,
+             box_yr_8,box_yr_9, nrow = 9, ncol = 1,
+             top=quote("Boxplot of Fatalities over years 1980 - 2004"))
+```
+
+### EXPLANATORY VARIABLES
+Histograms
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+ex_h1 = ggplot(traffic, aes(x = minage)) + 
+               scale_x_continuous(name = "Minimum Age") +
+               plot_hist + plot_theme
+
+ex_h2 = ggplot(traffic, aes(x = log(minage))) + 
+               scale_x_continuous(name = "Log(Minimum Age)") +
+               plot_hist + plot_theme
+
+ex_h3 = ggplot(traffic, aes(x = state_population)) + 
+               scale_x_continuous(name = "State Population") +
+               plot_hist + plot_theme
+
+ex_h4 = ggplot(traffic, aes(x = log(state_population))) + 
+               scale_x_continuous(name = "Log(State Population)") +
+               plot_hist + plot_theme
+
+ex_h5 = ggplot(traffic, aes(x = vehicle_miles_traveled_billions)) + 
+               scale_x_continuous(name = "Miles Trvld") +
+               plot_hist + plot_theme
+
+ex_h6 = ggplot(traffic, aes(x = log(vehicle_miles_traveled_billions))) + 
+               scale_x_continuous(name = "Log(Miles Trvld)") +
+               plot_hist + plot_theme
+
+ex_h7 = ggplot(traffic, aes(x = unemployment_rate)) + 
+               scale_x_continuous(name = "Unemp. Rate") +
+               plot_hist + plot_theme
+
+ex_h8 = ggplot(traffic, aes(x = log(unemployment_rate))) + 
+               scale_x_continuous(name = "Log(Unemp. Rate)") +
+               plot_hist + plot_theme
+
+ex_h9 = ggplot(traffic, aes(x = percent_pop_aged_14_to_24)) + 
+               scale_x_continuous(name = "% Pop 14-24") +
+               plot_hist + plot_theme
+
+ex_h10 = ggplot(traffic, aes(x = log(percent_pop_aged_14_to_24))) + 
+               scale_x_continuous(name = "Log(% Pop 14-24)") +
+               plot_hist + plot_theme
+
+ex_h11 = ggplot(traffic, aes(x = number_of_miles_driven_per_capita)) + 
+               scale_x_continuous(name = "Miles Driven") +
+               plot_hist + plot_theme
+
+ex_h12 = ggplot(traffic, aes(x = log(number_of_miles_driven_per_capita))) + 
+               scale_x_continuous(name = "log(Miles Driven)") +
+               plot_hist + plot_theme
+
+ex_h13 = ggplot(traffic, aes(x = speed_limit)) + 
+               scale_x_continuous(name = "Speed Limit") +
+               plot_hist + plot_theme
+
+ex_h14 = ggplot(traffic, aes(x = log(speed_limit))) + 
+               scale_x_continuous(name = "Log(Speed Limit)") +
+               plot_hist + plot_theme
+
+grid.arrange(ex_h1,ex_h2,ex_h3,ex_h4,ex_h5,ex_h6,ex_h7,
+             ex_h8,ex_h9,ex_h10,ex_h11,ex_h12,ex_h13,ex_h14,
+             nrow = 7, ncol = 2,
+             top=quote("Distributions of Explanatory Variables and Logs"))
+```
+
+boxplots of EXPLANATORY variables across the states to show the heterogeneity.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_ex_1 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,state_population), 
+             y = state_population)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Population")
+
+box_ex_2 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,vehicle_miles_traveled_billions), 
+             y = vehicle_miles_traveled_billions)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Miles Travelled")
+
+box_ex_3 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,unemployment_rate), 
+             y = unemployment_rate)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Unemp. rate")
+
+box_ex_4 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,percent_pop_aged_14_to_24), 
+             y = percent_pop_aged_14_to_24)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "% Pop. 14-24")
+
+box_ex_5 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,number_of_miles_driven_per_capita), 
+             y = number_of_miles_driven_per_capita)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Miles per Capita")
+
+box_ex_6 <- ptraffic %>%
+  group_by(State) %>%
+  ggplot(aes(x = reorder(State,speed_limit), 
+             y = speed_limit)) +
+  geom_boxplot() +
+  labs(x = "States",  y = "Speed limit")
+
+grid.arrange(box_ex_1,box_ex_2,box_ex_3,box_ex_4,box_ex_5,box_ex_6,
+             nrow = 6, ncol = 1,
+             top=quote("Boxplot of Explanatory Variables by State"))
+```
+
+boxplots of explanatory variables across the years to show the heterogeneity.
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=8}
+box_yr_ex_1 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = state_population)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "State Population")
+
+box_yr_ex_2 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = vehicle_miles_traveled_billions)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "Miles Travelled")
+
+box_yr_ex_3 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = unemployment_rate)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "Unemp. Rate")
+
+box_yr_ex_4 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = percent_pop_aged_14_to_24)) +
+  geom_boxplot() +
+  labs(x = "Years",  y = "% Pop. 14-24")
+
+box_yr_ex_5 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = number_of_miles_driven_per_capita)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Miles per Capita")
+
+box_yr_ex_6 <- ptraffic %>%
+  group_by(year) %>%
+  ggplot(aes(x = year, 
+             y = speed_limit)) +
+  geom_boxplot() +
+  labs(x = "years",  y = "Speed Limit")
+
+grid.arrange(box_yr_ex_1,box_yr_ex_2,box_yr_ex_3,box_yr_ex_4,box_yr_ex_5,
+             box_yr_ex_6, nrow = 6, ncol = 1,
+             top=quote("Boxplot of Explanatory Variables over years"))
+```
+
+### Total Fatality Rate vs Explanatory Variables OVER STATES
+
+```{r}
+annual_mean <- aggregate(traffic[, c("total_fatalities_rate", 
+                                      "state_population",
+                                      "unemployment_rate",
+                                      "percent_pop_aged_14_to_24",
+                                      "vehicle_miles_traveled_billions",
+                                      "number_of_miles_driven_per_capita")], 
+                         traffic["year"], FUN = mean)
+ggpairs(annual_mean, size = 5, cardinality_threshold=25) + 
+  ggtitle(label = "State Averages over time (years)")
+```
+
+### Total Fatality Rate vs Explanatory Variables OVER YEARS
+
+```{r}
+state_mean <- aggregate(traffic[, c("total_fatalities_rate", 
+                                    "state_population",
+                                    "unemployment_rate",
+                                    "percent_pop_aged_14_to_24",
+                                    "vehicle_miles_traveled_billions",
+                                    "number_of_miles_driven_per_capita")], 
+                         traffic["State"], FUN = mean)
+ggpairs(state_mean, size = 5, cardinality_threshold=60) + 
+  ggtitle(label = "Year Averages over State")
+```
+
+
+
+# (15 points) Preliminary Model
+
+Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
+
+- Why is fitting a linear model a sensible starting place? 
+- What does this model explain, and what do you find in this model? 
+- Did driving become safer over this period? Please provide a detailed explanation.
+- What, if any, are the limitation of this model. In answering this, please consider **at least**: 
+    - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
+    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+
+```{r}
+base_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04, data = traffic) 
+summary(base_model)
+```
+
+
+# (15 points) Expanded Model 
+
+Expand the **Preliminary Model** by adding variables related to the following concepts: 
+
+- Blood alcohol levels 
+- Per se laws
+- Primary seat belt laws (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+- Secondary seat belt laws 
+- Speed limits faster than 70 
+- Graduated drivers licenses 
+- Percent of the population between 14 and 24 years old
+- Unemployment rate
+- Vehicle miles driven per capita. 
+
+If it is appropriate, include transformations of these variables. Please carefully explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. 
+
+- How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
+- Do *per se laws* have a negative effect on the fatality rate? 
+- Does having a primary seat belt law? 
+
+```{r Expanded Model}
+expanded_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04, bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                data = traffic) 
+summary(expanded_model)
+```
+## Transformation Details
+
+## Why a transformation is needed?
+
+When dealing with statistics there are times when data get skewed by having 
+a high concentration at the one end and lower values at the other end. These 
+results in a peak towards one end that trails off. One way of dealing with this 
+type of data is to use a logarithmic scale to give it a more normal pattern to 
+the data. By doing a logarithmic transformation on your original data distribution, 
+you can give it a better normality assumption, making it easier for any statistical 
+tests to be performed on.
+
+Also, weather the transformation yield better results will be measured by 
+Shapiro-Wilk test, which is a great way to see if a variable is normally 
+distributed. The data is normal if the p-value is above 0.05. This is an 
+important assumption in creating any sort of model and also evaluating models. 
+
+##Independent Variables
+
+1) d81, d82, ..., d04
+
+Discrete distribution with two values
+
+2) bac08, bac10
+
+3) adm_lic_revoc_law
+
+4) primary_seatbelt_law, secondary_seatbelt_law
+
+5) sl75, slnone
+
+6) grad_drivers_lic_law
+
+7) percent_pop_aged_14_to_24
+
+8) unemployment_rate
+```{r shapiro unemployment_rate}
+shapiro.test(log(traffic$unemployment_rate))
+shapiro.test(traffic$unemployment_rate)
+```
+
+The data distribution of the independent variable `unemployment_rate`
+illustrates positive skew (or right-skewed) with a mean value of 5.951 greater than the 
+median value of 5.600. Also the 3rd and 4th Quantile are 4x the size of the first two 
+Quantiles. A log transformation of this data will make the distribution normal with a mean
+and median of 1.7273 and 1.7228 respectively, with the spread of 1.0 between the first 
+and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
+log data distribution with p-value of 0.2991 vs 2.2e-16.
+
+9) number_of_miles_driven_per_capita
+```{r shapiro number_of_miles_driven_per_capita}
+shapiro.test(log(traffic$number_of_miles_driven_per_capita))
+shapiro.test(traffic$number_of_miles_driven_per_capita)
+```
+
+The data distribution of the independent variable `number_of_miles_driven_per_capita`
+illustrates positive skew (or right-skewed) with a mean value of 9129 greater than the 
+median value of 9013. Also the 3rd and 4th Quantile are double the size of the first two 
+Quantiles. A log transformation of this data will make the distribution normal with a mean
+and median of 9.100 and 9.106 respectively, with the spread of 0.7 between the first 
+and the second half of the data. The Shapiro-Wilk test illustrates the normality of the
+log data distribution is far better than the one without log transformation. The 
+p-value of 0.0003426 vs 9.81e-15, for with and without transformation is evident.
+
+# (15 points) State-Level Fixed Effects 
+
+Re-estimate the **Expanded Model** using fixed effects at the state level. 
+
+- What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
+- What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
+- What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
+
+Which set of estimates do you think is more reliable? Why do you think this? 
+
+- What assumptions are needed in each of these models?  
+- Are these assumptions reasonable in the current context?
+
+
+```{r State-Level Fixed Effects}
+
+
+traffic2 <- traffic
+row.names(traffic2) <- NULL
+within.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                    data=traffic2, index=c("state", "year"), model="within")
+summary(within.model)
+```
+
+# (10 points) Consider a Random Effects Model 
+
+Instead of estimating a fixed effects model, should you have estimated a random effects model?
+
+- Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
+- If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
+- If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
+
+The random effects model assumes all assumptions of the fixed effect model and additional assumptions. Using a random effects model imposes the error structure that the error term $ v_{it} $ is equal to the sum of variation between groups and variation within groups onto the model residuals, allowing to properly specify the residuals and more efficiently estimate the coefficients of interest. This requires the assumption of independence between random effects and the other predictors in the model. 
+
+The assumptions for the fixed effect model are discussed above, the additional assumption of independence of random effects and other predictors in the model is evaluated below. 
+
+To test the assumption of independence between random effects and the other predictors in the model, we will test if there is ommitted variable bias from omitting fixed effects from the model. 
+
+The test we run is the Hausman Test for fixed versus random effects. The null hypothesis is that the random effects model is acceptable while the alternative hypothesis is that there is correlation between residuals and predictors, meaning that we should use the FE model. 
+
+
+```{r}
+
+re.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + log(unemployment_rate) + log(number_of_miles_driven_per_capita), data=traffic2, index=c("state", "year"), model="random")
+
+
+```
+
+```{r}
+phtest(within.model, re.model)
+traffic2
+```
+
+The Hausman test results in a p-value of `phtest(within.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
+
+We see statistical significance on the same variables as the fixed effects model, all statistically significant variables have the same sign in both models. The statistically insignificant models are secondary_seatbelt_law, slnone, and grad_drivers_lic_law. 
+
+Interpreting the statistically significant coefficients: 
+- For each year indicator variable, this indicates that observing data in that year has the coefficient's effect on the total fatalities. The baseline (i.e., no indicator variable for year) is 1980. As we see that every coefficient for the year indicators are negative, we can interpret this as that, all else equal, years outside of 1980 are expected to have less total fatalities than 1980. 
+
+Interpretation of explanatory variables is tricky as they include both the within-entity and between-entity effects. The coefficients are interpreted as the effect of changing the year and the state indices by one unit on the total fatalities dependent variable. 
+
+```{r}
+stargazer::stargazer(within.model, re.model, omit.stat=c("adj.rsq", "f"), type="text", style="qje", column.labels = c("within", "re"))
+```
+
+
+
+If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to ommitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are uncorrelated with the predictors. If this is not the case, the error term will be affected. 
+
+
+
+# (10 points) Model Forecasts 
+
+The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
+
+We will use data from FRED on vehicle miles traveled in the US by month. This data is sourced by the US Federal Highway administration. 
+
+```{r}
+vehicle_miles <- read.csv('./data/vehiclemiles.csv')
+```
+```{r}
+vehicle_miles$DATE <- as.Date(vehicle_miles$DATE)
+vehicle_miles$year <- format(vehicle_miles$DATE, format="%Y")
+vehicle_miles
+```
+
+
+- Comparing monthly miles driven in 2018 to the same months during the pandemic: 
+  - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
+  
+  We define pandemic months as the time frame between March 2020 (when COVID first hit) and March 2021 when the vaccine rollout had begun. 
+  
+```{r}
+drive_2018 <- vehicle_miles %>% filter(year == 2018)
+drive_pandemic <- vehicle_miles %>% filter(year == 2020 | year == 2021)
+drive_2018$month <- format(drive_2018$DATE, "%m")
+drive_pandemic$month <- format(drive_pandemic$DATE, "%m")
+
+drive_pandemic <- drive_pandemic %>% slice(3:14)
+drive_pandemic$group <- 'pandemic'
+drive_2018$group <- 2018
+comparison <- rbind(drive_2018, drive_pandemic)
+```
+```{r}
+ggplot(comparison, aes(x=month, y=TRFVOLUSM227NFWA, group=group)) + geom_line(aes(color=group)) + ylab('Miles Driven') + ggtitle('Miles Driven in 2018 vs Pandemic Months')
+```
+Visually from this chart, we see the biggest differences coming in april and May. We will confirm further below. 
+
+```{r}
+drive_pandemic_month <- drive_pandemic %>% arrange(month)
+differences <- drive_2018$TRFVOLUSM227NFWA - drive_pandemic_month$TRFVOLUSM227NFWA
+perc <- scales::percent(drive_pandemic_month$TRFVOLUSM227NFWA[4]/drive_2018$TRFVOLUSM227NFWA[4])
+```
+
+We find the months with the largest differences to have been April, 2018 had `r differences[4]` more million miles driven. In percentage terms, in April 2020, Americans drove `r perc` the amount that they did in April of 2018.   
+
+  - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
+  
+```{r}
+may_driving_2021 <- max(diff(drive_pandemic$TRFVOLUSM227NFWA))
+perc2 <- scales::percent(drive_pandemic$TRFVOLUSM227NFWA[4]/drive_pandemic$TRFVOLUSM227NFWA[3] - 1)
+```
+March 2018: 42946 
+May 2021: 53389
+
+The maximum increase in driving was from April 2020 to May 2020, where driving increased by `r may_driving_2021` millions of miles. This represents a `r perc2` increase month over month. 
+  
+Now, use these changes in driving to make forecasts from your models. 
+
+- Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+```{r}
+effect1 <- within.model$coefficients['log(number_of_miles_driven_per_capita)']*(drive_pandemic$TRFVOLUSM227NFWA[4]/drive_pandemic$TRFVOLUSM227NFWA[3])
+```
+
+If the number of miles driven per capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect` percent.
+
+- Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+```{r}
+effect2 <- within.model$coefficients['log(number_of_miles_driven_per_capita)']*(-(1-drive_pandemic_month$TRFVOLUSM227NFWA[4]/drive_2018$TRFVOLUSM227NFWA[4]))
+
+```
+If the number of miles driven per capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect2` percent. 
+
+
+# (5 points) Evaluate Error 
+
+If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+

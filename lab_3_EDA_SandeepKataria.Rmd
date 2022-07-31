@@ -692,7 +692,7 @@ grid.arrange(box_yr_ex_1,box_yr_ex_2,box_yr_ex_3,box_yr_ex_4,box_yr_ex_5,
 
 ### Total Fatality Rate vs Explanatory Variables OVER STATES
 
-```{r}
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
 annual_mean <- aggregate(traffic[, c("total_fatalities_rate", 
                                       "state_population",
                                       "unemployment_rate",
@@ -706,18 +706,53 @@ ggpairs(annual_mean, size = 5, cardinality_threshold=25) +
 
 ### Total Fatality Rate vs Explanatory Variables OVER YEARS
 
-```{r}
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
 state_mean <- aggregate(traffic[, c("total_fatalities_rate", 
                                     "state_population",
                                     "unemployment_rate",
                                     "percent_pop_aged_14_to_24",
                                     "vehicle_miles_traveled_billions",
                                     "number_of_miles_driven_per_capita")], 
-                         traffic["State"], FUN = mean)
+                         traffic["state"], FUN = mean)
 ggpairs(state_mean, size = 5, cardinality_threshold=60) + 
   ggtitle(label = "Year Averages over State")
 ```
 
+### Total Fatality Rate vs Traffic Law Variables OVER STATES
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
+annual_law_mean <- aggregate(traffic[,c("total_fatalities_rate", 
+                                        "minage", 
+                                        "zerotol",
+                                        "sl70plus",
+                                        "grad_drivers_lic_law",
+                                        "adm_lic_revoc_law",
+                                        "blood_alc_lim_10",
+                                        "blood_alc_lim_10",
+                                        "primary_seatbelt_law",
+                                        "secondary_seatbelt_law")], 
+                              traffic["year"], FUN = mean)
+ggpairs(annual_law_mean, size = 5, cardinality_threshold=100) + 
+  ggtitle(label = "State Law Proportions over time (years)")
+```
+
+
+### Total Fatality Rate vs Traffic Law OVER YEARS
+
+```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
+state_law_mean <- aggregate(traffic[, c("total_fatalities_rate", 
+                                         "minage","zerotol",
+                                         "sl70plus",
+                                         "grad_drivers_lic_law",
+                                         "adm_lic_revoc_law",
+                                         "blood_alc_lim_10",
+                                         "blood_alc_lim_10",
+                                         "primary_seatbelt_law",
+                                         "secondary_seatbelt_law")], 
+                         traffic["state"], FUN = mean)
+ggpairs(state_mean, size = 5, cardinality_threshold=48) + 
+  ggtitle(label = "State Law Time Proportions vs State")
+```
 
 
 # (15 points) Preliminary Model

@@ -803,7 +803,13 @@ Discrete distribution with two values
 
 6) grad_drivers_lic_law
 
+
 7) percent_pop_aged_14_to_24
+```{r shapiro percent_pop_aged_14_to_24}
+shapiro.test(log(traffic$percent_pop_aged_14_to_24))
+shapiro.test(traffic$percent_pop_aged_14_to_24)
+summary((traffic$percent_pop_aged_14_to_24))
+```
 
 8) unemployment_rate
 ```{r shapiro unemployment_rate}
@@ -851,34 +857,82 @@ Which set of estimates do you think is more reliable? Why do you think this?
 ```{r Fixed Effects models}
 traffic.new.row <- traffic
 row.names(traffic.new.row) <- NULL
-within.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
-                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
-                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+pool.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
                 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
                 + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
                 + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="within")
-between.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
-                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
-                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
-                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
-                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
-                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="between")
-fd.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
-                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
-                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+                    data=traffic.new.row, index=c("state", "year"), model="pooling")
+
+fd.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
                 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
                 + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
                 + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
                     data=traffic.new.row, index=c("state", "year"), model="fd")
-```
 
-```{r summary fixed effects}
+between.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                    data=traffic.new.row, index=c("state", "year"), model="between")
+
+within.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
+                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
+                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
+                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
+                    data=traffic.new.row, index=c("state", "year"), model="within")
+summary(pool.model)
 summary(fd.model)
 summary(between.model)
 summary(within.model)
+
+stargazer(pool.model, fd.model, between.model, within.model, type = "text",
+          omit.stat = c("ser","f","adj.rsq"), dep.var.labels = "",
+          column.labels = c("Pooled", "FD", "Between", "Within"))
+
 ```
+```{r Fixed Effect Tests}
+pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
+pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
+pFtest(within.model, pool.model)
+```
+The fixed effects model is commonly applied to remove omitted variable bias in 
+the case of unobserved individual characteristics. By estimating changes within 
+a specific group (over time), all time-invariant differences between entities are 
+controlled for. The fixed effect model could be estimated using three estimation 
+methods:
+
+1) Least Squares Dummy Variable Estimation (LSDV)
+
+2) First-difference Estimator (FD)
+
+3) Fixed Effect or Within-groups Estimator (FE)
+
+All fixed effect estimation methods are consistent under the following assumptions:
+
+1- Linearity: the model is linear in parameters
+
+2- i.i.d. : The observations are independent across individuals but not 
+necessarily across time. This is guaranteed by random sampling of individuals.
+
+3- Indentifiability: The regressors, including a constant, are not perfectly 
+collinear, and all regressors (but the constant) have non-zero variance and not 
+too many extreme values.
+
+4- Zero conditional (strict exogeneity) - The most important of these is that 
+$\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the 
+idiosyncratic error at each time t, uit, is uncorrelated with the explanatory 
+variable in both time periods. 
+
+Based on the above pFtest results, we reject the null hypothesis of no fixed effects. 
+This means we **should include state and/or time fixed effects** in our model.
+
+
+
+OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly.
+As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities.
+This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
+
+
 
 # (10 points) Consider a Random Effects Model 
 

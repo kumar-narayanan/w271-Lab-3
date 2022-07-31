@@ -28,7 +28,6 @@ library(plm)
 library(vcd)
 library(ggrepel)
 library(tidyr)
-library(Rcpp)
 ```
 
 
@@ -59,8 +58,6 @@ traffic <- merge(traffic, states, by.x = "state", by.y = "index")
 ```{r}
 unique(traffic$sl70plus)
 ```
-
-
 
 
 # (30 points, total) Build and Describe the Data 
@@ -693,7 +690,7 @@ grid.arrange(box_yr_ex_1,box_yr_ex_2,box_yr_ex_3,box_yr_ex_4,box_yr_ex_5,
 
 ### Total Fatality Rate vs Explanatory Variables OVER STATES
 
-```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
+```{r}
 annual_mean <- aggregate(traffic[, c("total_fatalities_rate", 
                                       "state_population",
                                       "unemployment_rate",
@@ -707,53 +704,18 @@ ggpairs(annual_mean, size = 5, cardinality_threshold=25) +
 
 ### Total Fatality Rate vs Explanatory Variables OVER YEARS
 
-```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
+```{r}
 state_mean <- aggregate(traffic[, c("total_fatalities_rate", 
                                     "state_population",
                                     "unemployment_rate",
                                     "percent_pop_aged_14_to_24",
                                     "vehicle_miles_traveled_billions",
                                     "number_of_miles_driven_per_capita")], 
-                         traffic["state"], FUN = mean)
+                         traffic["State"], FUN = mean)
 ggpairs(state_mean, size = 5, cardinality_threshold=60) + 
   ggtitle(label = "Year Averages over State")
 ```
 
-### Total Fatality Rate vs Traffic Law Variables OVER STATES
-
-```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
-annual_law_mean <- aggregate(traffic[,c("total_fatalities_rate", 
-                                        "minage", 
-                                        "zerotol",
-                                        "sl70plus",
-                                        "grad_drivers_lic_law",
-                                        "adm_lic_revoc_law",
-                                        "blood_alc_lim_10",
-                                        "blood_alc_lim_10",
-                                        "primary_seatbelt_law",
-                                        "secondary_seatbelt_law")], 
-                              traffic["year"], FUN = mean)
-ggpairs(annual_law_mean, size = 5, cardinality_threshold=100) + 
-  ggtitle(label = "State Law Proportions over time (years)")
-```
-
-
-### Total Fatality Rate vs Traffic Law OVER YEARS
-
-```{r,warning=FALSE, echo=FALSE, fig.height=12, fig.width=12}
-state_law_mean <- aggregate(traffic[, c("total_fatalities_rate", 
-                                         "minage","zerotol",
-                                         "sl70plus",
-                                         "grad_drivers_lic_law",
-                                         "adm_lic_revoc_law",
-                                         "blood_alc_lim_10",
-                                         "blood_alc_lim_10",
-                                         "primary_seatbelt_law",
-                                         "secondary_seatbelt_law")], 
-                         traffic["state"], FUN = mean)
-ggpairs(state_mean, size = 5, cardinality_threshold=48) + 
-  ggtitle(label = "State Law Time Proportions vs State")
-```
 
 
 # (15 points) Preliminary Model
@@ -798,7 +760,7 @@ If it is appropriate, include transformations of these variables. Please careful
 ```{r Expanded Model}
 expanded_model = lm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
                 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
-                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04, bac08 + bac10 
                 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
                 + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
                 + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
@@ -838,13 +800,7 @@ Discrete distribution with two values
 
 6) grad_drivers_lic_law
 
-
 7) percent_pop_aged_14_to_24
-```{r shapiro percent_pop_aged_14_to_24}
-shapiro.test(log(traffic$percent_pop_aged_14_to_24))
-shapiro.test(traffic$percent_pop_aged_14_to_24)
-summary((traffic$percent_pop_aged_14_to_24))
-```
 
 8) unemployment_rate
 ```{r shapiro unemployment_rate}
@@ -889,85 +845,20 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - Are these assumptions reasonable in the current context?
 
 
-```{r Fixed Effects models}
-traffic.new.row <- traffic
-row.names(traffic.new.row) <- NULL
-pool.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
-                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
-                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
-                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="pooling")
+```{r State-Level Fixed Effects}
 
-fd.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
-                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
-                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
-                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="fd")
 
-between.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
+traffic2 <- traffic
+row.names(traffic2) <- NULL
+within.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87
+                + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97
+                + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 
                 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
                 + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
                 + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="between")
-
-within.model <- plm(total_fatalities_rate ~ year + bac08 + bac10 
-                + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law 
-                + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24)
-                + log(unemployment_rate) + log(number_of_miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="within")
-summary(pool.model)
-summary(fd.model)
-summary(between.model)
+                    data=traffic2, index=c("state", "year"), model="within")
 summary(within.model)
-
-stargazer(pool.model, fd.model, between.model, within.model, type = "text",
-          omit.stat = c("ser","f","adj.rsq"), dep.var.labels = "",
-          column.labels = c("Pooled", "FD", "Between", "Within"))
-
 ```
-```{r Fixed Effect Tests}
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
-pFtest(within.model, pool.model)
-```
-The fixed effects model is commonly applied to remove omitted variable bias in 
-the case of unobserved individual characteristics. By estimating changes within 
-a specific group (over time), all time-invariant differences between entities are 
-controlled for. The fixed effect model could be estimated using three estimation 
-methods:
-
-1) Least Squares Dummy Variable Estimation (LSDV)
-
-2) First-difference Estimator (FD)
-
-3) Fixed Effect or Within-groups Estimator (FE)
-
-All fixed effect estimation methods are consistent under the following assumptions:
-
-1- Linearity: the model is linear in parameters
-
-2- i.i.d. : The observations are independent across individuals but not 
-necessarily across time. This is guaranteed by random sampling of individuals.
-
-3- Indentifiability: The regressors, including a constant, are not perfectly 
-collinear, and all regressors (but the constant) have non-zero variance and not 
-too many extreme values.
-
-4- Zero conditional (strict exogeneity) - The most important of these is that 
-$\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the 
-idiosyncratic error at each time t, uit, is uncorrelated with the explanatory 
-variable in both time periods. 
-
-Based on the above pFtest results, we reject the null hypothesis of no fixed effects. 
-This means we **should include state and/or time fixed effects** in our model.
-
-
-
-OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly.
-As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities.
-This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
-
-
 
 # (10 points) Consider a Random Effects Model 
 
@@ -977,19 +868,122 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
+The random effects model assumes all assumptions of the fixed effect model and additional assumptions. Using a random effects model imposes the error structure that the error term $ v_{it} $ is equal to the sum of variation between groups and variation within groups onto the model residuals, allowing to properly specify the residuals and more efficiently estimate the coefficients of interest. This requires the assumption of independence between random effects and the other predictors in the model. 
+
+The assumptions for the fixed effect model are discussed above, the additional assumption of independence of random effects and other predictors in the model is evaluated below. 
+
+To test the assumption of independence between random effects and the other predictors in the model, we will test if there is ommitted variable bias from omitting fixed effects from the model. 
+
+The test we run is the Hausman Test for fixed versus random effects. The null hypothesis is that the random effects model is acceptable while the alternative hypothesis is that there is correlation between residuals and predictors, meaning that we should use the FE model. 
+
+
+```{r}
+
+re.model <- plm(total_fatalities_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + bac10 + adm_lic_revoc_law + primary_seatbelt_law + secondary_seatbelt_law + sl75 + slnone + grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + log(unemployment_rate) + log(number_of_miles_driven_per_capita), data=traffic2, index=c("state", "year"), model="random")
+
+
+```
+
+```{r}
+phtest(within.model, re.model)
+traffic2
+```
+
+The Hausman test results in a p-value of `phtest(within.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
+
+We see statistical significance on the same variables as the fixed effects model, all statistically significant variables have the same sign in both models. The statistically insignificant models are secondary_seatbelt_law, slnone, and grad_drivers_lic_law. 
+
+Interpreting the statistically significant coefficients: 
+- For each year indicator variable, this indicates that observing data in that year has the coefficient's effect on the total fatalities. The baseline (i.e., no indicator variable for year) is 1980. As we see that every coefficient for the year indicators are negative, we can interpret this as that, all else equal, years outside of 1980 are expected to have less total fatalities than 1980. 
+
+Interpretation of explanatory variables is tricky as they include both the within-entity and between-entity effects. The coefficients are interpreted as the effect of changing the year and the state indices by one unit on the total fatalities dependent variable. 
+
+```{r}
+stargazer::stargazer(within.model, re.model, omit.stat=c("adj.rsq", "f"), type="text", style="qje", column.labels = c("within", "re"))
+```
+
+
+
+If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to ommitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are uncorrelated with the predictors. If this is not the case, the error term will be affected. 
+
+
+
 # (10 points) Model Forecasts 
 
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
 
+We will use data from FRED on vehicle miles traveled in the US by month. This data is sourced by the US Federal Highway administration. 
+
+```{r}
+vehicle_miles <- read.csv('./data/vehiclemiles.csv')
+```
+```{r}
+vehicle_miles$DATE <- as.Date(vehicle_miles$DATE)
+vehicle_miles$year <- format(vehicle_miles$DATE, format="%Y")
+vehicle_miles
+```
+
+
 - Comparing monthly miles driven in 2018 to the same months during the pandemic: 
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
+  
+  We define pandemic months as the time frame between March 2020 (when COVID first hit) and March 2021 when the vaccine rollout had begun. 
+  
+```{r}
+drive_2018 <- vehicle_miles %>% filter(year == 2018)
+drive_pandemic <- vehicle_miles %>% filter(year == 2020 | year == 2021)
+drive_2018$month <- format(drive_2018$DATE, "%m")
+drive_pandemic$month <- format(drive_pandemic$DATE, "%m")
+
+drive_pandemic <- drive_pandemic %>% slice(3:14)
+drive_pandemic$group <- 'pandemic'
+drive_2018$group <- 2018
+comparison <- rbind(drive_2018, drive_pandemic)
+```
+```{r}
+ggplot(comparison, aes(x=month, y=TRFVOLUSM227NFWA, group=group)) + geom_line(aes(color=group)) + ylab('Miles Driven') + ggtitle('Miles Driven in 2018 vs Pandemic Months')
+```
+Visually from this chart, we see the biggest differences coming in april and May. We will confirm further below. 
+
+```{r}
+drive_pandemic_month <- drive_pandemic %>% arrange(month)
+differences <- drive_2018$TRFVOLUSM227NFWA - drive_pandemic_month$TRFVOLUSM227NFWA
+perc <- scales::percent(drive_pandemic_month$TRFVOLUSM227NFWA[4]/drive_2018$TRFVOLUSM227NFWA[4])
+```
+
+We find the months with the largest differences to have been April, 2018 had `r differences[4]` more million miles driven. In percentage terms, in April 2020, Americans drove `r perc` the amount that they did in April of 2018.   
+
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
+  
+```{r}
+may_driving_2021 <- max(diff(drive_pandemic$TRFVOLUSM227NFWA))
+perc2 <- scales::percent(drive_pandemic$TRFVOLUSM227NFWA[4]/drive_pandemic$TRFVOLUSM227NFWA[3] - 1)
+```
+March 2018: 42946 
+May 2021: 53389
+
+The maximum increase in driving was from April 2020 to May 2020, where driving increased by `r may_driving_2021` millions of miles. This represents a `r perc2` increase month over month. 
   
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+```{r}
+effect1 <- within.model$coefficients['log(number_of_miles_driven_per_capita)']*(drive_pandemic$TRFVOLUSM227NFWA[4]/drive_pandemic$TRFVOLUSM227NFWA[3])
+```
+
+If the number of miles driven per capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect` percent.
+
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+```{r}
+effect2 <- within.model$coefficients['log(number_of_miles_driven_per_capita)']*(-(1-drive_pandemic_month$TRFVOLUSM227NFWA[4]/drive_2018$TRFVOLUSM227NFWA[4]))
+
+```
+If the number of miles driven per capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect2` percent. 
+
 
 # (5 points) Evaluate Error 
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+

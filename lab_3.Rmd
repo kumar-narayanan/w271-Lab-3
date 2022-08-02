@@ -773,22 +773,48 @@ pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
 pFtest(within.model, pool.model)
 ```
-The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. The fixed effect model could be estimated using three estimation methods:
+## Blood Alcohol variable coefficient exploration
+All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest
+for the Within model and highest for the Between model.
+
+## Per se laws variable coefficient exploration
+Except for Between model all other models are consistent in the sign of the Per se law variable coefficient. Only Within model illustrates higher significance and larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
+
+## Primary seat-belt variable coefficient exploration
+Except for Pooled OLS model all other models are consistent in the sign of the Primary seat-belt variable coefficient. Only Within model illustrates higher significance and Between model exhibits larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
+
+## Reliable model and the reason behind it
+First lets explore the assumptions for each of the models
+
+A1- Linearity: the model is linear in parameters
+
+A2- i.i.d. : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
+
+A3- Indentifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
+
+A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
+  + $E(u_{it}x_{it})$ = 0
+  + $E(x_{it}, \gamma_i)$ = 0
+
+A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
+
+The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. 
+ 
+The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
+
+The fixed effect model could be estimated using three estimation methods:
 
 >Least Squares Dummy Variable Estimation (LSDV), First-difference Estimator (FD), and Fixed Effect or Within-groups Estimator (FE)
 
-All fixed effect estimation methods are consistent under the following assumptions:
-
-* Linearity: the model is linear in parameters
-
-* i.i.d. : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
-
-* Indentifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
-
-* Zero conditional (strict exogeneity): The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, uit, is uncorrelated with the explanatory 
-variable in both time periods. 
+All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$
 
 Based on the above pFtest results, we reject the null hypothesis of no fixed effects. This means we **should include state and/or time fixed effects** in our model.
+
+OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly. As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities. This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
+
+Based on the pFtest result, p-value of 2.2e-16, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
+
+Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.
 
 # (10 points) Consider a Random Effects Model 
 
@@ -797,6 +823,38 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
+
+```{r RE model start}
+re.model <- plm(total_fatality_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + 
+                  d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + 
+                  d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + 
+                  bac10 + adm_lic_revoc_law + primary_seatbelt_law + 
+                  secondary_seatbelt_law + sl75 + slnone + 
+                  grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + 
+                  log(unemployment_rate) + log(miles_driven_per_capita), 
+                data=traffic.new.row, index=c("state", "year"), model="random")
+```
+
+```{r model comparison}
+phtest(within.model, re.model)
+#traffic.new.row
+```
+
+The Hausman test results in a p-value of `phtest(within.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
+
+We see statistical significance on the same variables as the fixed effects model, all statistically significant variables have the same sign in both models. The statistically insignificant models are secondary_seatbelt_law, slnone, and grad_drivers_lic_law. 
+
+Interpreting the statistically significant coefficients: 
+- For each year indicator variable, this indicates that observing data in that year has the coefficient's effect on the total fatalities. The baseline (i.e., no indicator variable for year) is 1980. As we see that every coefficient for the year indicators are negative, we can interpret this as that, all else equal, years outside of 1980 are expected to have less total fatalities than 1980. 
+
+Interpretation of explanatory variables is tricky as they include both the within-entity and between-entity effects. The coefficients are interpreted as the effect of changing the year and the state indices by one unit on the total fatalities dependent variable. 
+
+```{r stargazer output, echo=FALSE}
+stargazer(within.model, re.model, omit.stat=c("adj.rsq", "f"), 
+          type="text", style="qje", column.labels = c("within", "re"))
+```
+
+If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are uncorrelated with the predictors. If this is not the case, the error term will be affected. 
 
 # (10 points) Model Forecasts 
 

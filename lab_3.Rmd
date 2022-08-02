@@ -735,34 +735,32 @@ row.names(traffic.new.row) <- NULL
 pool.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                     adm_lic_revoc_law + primary_seatbelt_law + 
                     secondary_seatbelt_law + sl75 + slnone + 
-                    grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + 
+                    grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                     log(unemployment_rate) + 
                     log(miles_driven_per_capita), data=traffic.new.row, 
                   index=c("state", "year"), model="pooling")
 fd.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                   adm_lic_revoc_law + primary_seatbelt_law + 
                   secondary_seatbelt_law + sl75 + slnone + 
-                  grad_drivers_lic_law + log(percent_pop_aged_14_to_24) +
+                  grad_drivers_lic_law + percent_pop_aged_14_to_24 +
                   log(unemployment_rate) + log(miles_driven_per_capita), 
                 data=traffic.new.row, index=c("state", "year"), model="fd")
 between.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                        adm_lic_revoc_law + primary_seatbelt_law + 
                        secondary_seatbelt_law + sl75 + slnone + 
-                       grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + 
+                       grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                        log(unemployment_rate) + log(miles_driven_per_capita), 
-                     data=traffic.new.row, index=c("state", "year"), model="between")
+                     data=traffic.new.row, index=c("state", "year"), 
+                     model="between")
 within.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                       adm_lic_revoc_law + primary_seatbelt_law + 
                       secondary_seatbelt_law + sl75 + slnone + 
-                      grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + 
+                      grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                       log(unemployment_rate) + log(miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), model="within")
+                    data=traffic.new.row, index=c("state", "year"), 
+                    model="within")
 ```
 ```{r model ouputs, echo=FALSE}
-#summary(pool.model)
-#summary(fd.model)
-#summary(between.model)
-#summary(within.model)
 stargazer(pool.model, fd.model, between.model, within.model, type = "text",
           omit.stat = c("ser","f","adj.rsq"), dep.var.labels = "",
           column.labels = c("Pooled", "FD", "Between", "Within"))
@@ -773,6 +771,14 @@ pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
 pFtest(within.model, pool.model)
 ```
+
+```{r pbg test}
+pbgtest(pool.model)
+pbgtest(fd.model)
+pbgtest(within.model)
+pbgtest(between.model)
+```
+
 ## Blood Alcohol variable coefficient exploration
 All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest
 for the Within model and highest for the Between model.
@@ -830,17 +836,17 @@ re.model <- plm(total_fatality_rate ~ d81 + d82 + d83 + d84 + d85 + d86 +
                   d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + 
                   bac10 + adm_lic_revoc_law + primary_seatbelt_law + 
                   secondary_seatbelt_law + sl75 + slnone + 
-                  grad_drivers_lic_law + log(percent_pop_aged_14_to_24) + 
+                  grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                   log(unemployment_rate) + log(miles_driven_per_capita), 
                 data=traffic.new.row, index=c("state", "year"), model="random")
 ```
 
 ```{r model comparison}
-phtest(within.model, re.model)
+phtest(between.model, re.model)
 #traffic.new.row
 ```
 
-The Hausman test results in a p-value of `phtest(within.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
+The Hausman test results in a p-value of `phtest(between.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
 
 We see statistical significance on the same variables as the fixed effects model, all statistically significant variables have the same sign in both models. The statistically insignificant models are secondary_seatbelt_law, slnone, and grad_drivers_lic_law. 
 
@@ -850,8 +856,8 @@ Interpreting the statistically significant coefficients:
 Interpretation of explanatory variables is tricky as they include both the within-entity and between-entity effects. The coefficients are interpreted as the effect of changing the year and the state indices by one unit on the total fatalities dependent variable. 
 
 ```{r stargazer output, echo=FALSE}
-stargazer(within.model, re.model, omit.stat=c("adj.rsq", "f"), 
-          type="text", style="qje", column.labels = c("within", "re"))
+stargazer(between.model, re.model, omit.stat=c("adj.rsq", "f"), 
+          type="text", style="qje", column.labels = c("between", "re"))
 ```
 
 If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are uncorrelated with the predictors. If this is not the case, the error term will be affected. 
@@ -939,3 +945,12 @@ If the number of miles driven per capita increased by as much as the COVID boom,
 # (5 points) Evaluate Error 
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+
+**Serial correlation or heteroskedasticity in the idiosyncratic errors will cause the standard errors for the model to be incorrect. CLT can be invoked for first-difference models (Wooldridge). However, for fixed effects models, this is not necessarily the case as we'll likely see AR(1) effects in the error terms. Unless the AR(1) is a random walk we'll have to account for the AR(1) correlation. In case of random walk the first difference will be white noise and thus can be worked around. Let us use the Breusch-Godfrey test to check for serial correlation.**
+
+```{r pbg test for serial correlation}
+pbgtest(within.model)
+```
+
+**The test reveals serial correlation - the p-value supports the alternate hypothesis of serial correlation. Thus the computed standard errors is likely to be inaccurate.**
+

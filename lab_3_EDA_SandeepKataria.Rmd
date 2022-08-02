@@ -930,42 +930,83 @@ pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
 pFtest(within.model, pool.model)
 ```
-The fixed effects model is commonly applied to remove omitted variable bias in 
-the case of unobserved individual characteristics. By estimating changes within 
-a specific group (over time), all time-invariant differences between entities are 
-controlled for. The fixed effect model could be estimated using three estimation 
-methods:
 
-1) Least Squares Dummy Variable Estimation (LSDV)
 
-2) First-difference Estimator (FD)
+## Blood Alcohol variable coefficient exploration
 
-3) Fixed Effect or Within-groups Estimator (FE)
+All the models are consistent in the negative sign of the Blood Alcohol variable 
+coefficient. The Pooled OLS and Within models significance levels are higher 
+compared to the First Difference and Between models. The standard errors are lowest
+for the Within model and highest for the Between model.
 
-All fixed effect estimation methods are consistent under the following assumptions:
+## Per se laws variable coefficient exploration
+ 
+Except for Between model all other models are consistent in the sign of the 
+Per se law variable coefficient. Only Within model illustrates higher significance
+and larger number for the coefficient. The standard errors are lowest
+for the Within model and highest for the Between model.
 
-1- Linearity: the model is linear in parameters
+## Primary seat-belt variable coefficient exploration
+ 
+Except for Pooled OLS model all other models are consistent in the sign of the 
+Primary seat-belt variable coefficient. Only Within model illustrates higher significance
+and Between model exhibits larger number for the coefficient. The standard errors are lowest
+for the Within model and highest for the Between model.
 
-2- i.i.d. : The observations are independent across individuals but not 
+## Reliable model and the reason behind it
+
+First lets explore the assumptions for each of the models
+
+A1- Linearity: the model is linear in parameters
+
+A2- i.i.d. : The observations are independent across individuals but not 
 necessarily across time. This is guaranteed by random sampling of individuals.
 
-3- Indentifiability: The regressors, including a constant, are not perfectly 
+A3- Indentifiability: The regressors, including a constant, are not perfectly 
 collinear, and all regressors (but the constant) have non-zero variance and not 
 too many extreme values.
 
-4- Zero conditional (strict exogeneity) - The most important of these is that 
+A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and 
+individual-specific effect $\gamma_i$ 
+    a) $E(u_{it}x_{it})$ = 0
+    b) $E(x_{it}, \gamma_i)$ = 0
+
+A5- Zero conditional (strict exogeneity) - The most important of these is that 
 $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the 
 idiosyncratic error at each time t, uit, is uncorrelated with the explanatory 
 variable in both time periods. 
 
+The pooled model simply applies an OLS estimate to the pooled data set where 
+each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. 
+The pooled OLS estimator is consistent under assumptions $A1-A4$. 
+ 
+The fixed effects model is commonly applied to remove omitted variable bias in 
+the case of unobserved individual characteristics. By estimating changes within 
+a specific group (over time), all time-invariant differences between entities are 
+controlled for. 
+
+The fixed effect model could be estimated using three estimation methods:
+
+1) Least Squares Dummy Variable Estimation (LSDV)
+2) First-difference Estimator (FD)
+3) Fixed Effect or Within-groups Estimator (FE)
+
+All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$
+
 Based on the above pFtest results, we reject the null hypothesis of no fixed effects. 
 This means we **should include state and/or time fixed effects** in our model.
-
-
 
 OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly.
 As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities.
 This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
+
+Based on the pFtest result, p-value of 2.2e-16, we reject the null hypothesis of 
+no fixed effects. This means we should include state and/or time fixed effects in our model.
+
+Comparing both the Wooldridge's hypothesis tests, we see that the both the models 
+(fd and fe) suffer from serial correlation. This suggests that both the models are 
+not good and we need to fit a better model. For comparison purpose we can use Within 
+model as the it has relatively better p-value.
 
 
 

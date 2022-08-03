@@ -229,6 +229,7 @@ head(traffic_pdf, 10)
 **A few state law variables, such as bac08 and bac10 are coded as dichotomous options, i.e. 1 and 0, indicating whether the law was applicable in that state in that year. A fraction value indicates that fraction of the year for which that law was applicable in that state. e.g. a fraction value of 0.667 means that the law was implemented in that state for 2/3 rd of the duration in that year.**
 
 ## Demographic Information
+*'vehicle_miles_traveled_billions', 'miles_driven_per_capita', 'unemployment_rate' and 'percent_pop_aged_14_to_24' are the four demographic variables. 'vehicle_miles_traveled_billions' and 'miles_driven_per_capita' account for overall miles driven and per capita miles driven by state's population. 'unemployment_rate' represents the rate of unemployment in a state in a given year. 'percent_pop_aged_14_to_24' represents how much % of state's population is youth.*
 
 ## Traffic Laws
 *There are quite a few variables explaining traffic laws across states over time.*

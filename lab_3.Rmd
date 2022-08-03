@@ -845,6 +845,90 @@ A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual
 
 A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
 
+```{r tests}
+par(mfrow=c(2,2))
+qqnorm(pool.model$residuals)
+qqline(pool.model$residuals)
+
+qqnorm(fd.model$residuals)
+qqline(fd.model$residuals)
+
+qqnorm(within.model$residuals)
+qqline(within.model$residuals)
+
+qqnorm(between.model$residuals)
+qqline(between.model$residuals)
+```
+All 4 models
+A1 - Linearity: The linear model is giving residuals that are approximately normally distributed. 
+
+A2 - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
+
+```{r vif test}
+lm.model <- lm(total_fatality_rate ~ year + bac08 + bac10 + 
+                      adm_lic_revoc_law + primary_seatbelt_law + 
+                      secondary_seatbelt_law + sl75 + slnone + 
+                      grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
+                      log(unemployment_rate) + log(miles_driven_per_capita), 
+                    data=traffic_df)
+car::vif(pool.model)
+car::vif(lm.model)
+var(traffic_df$bac08)
+var(traffic_df$bac10)
+var(traffic_df$adm_lic_revoc_law)
+var(traffic_df$sl75)
+var(traffic_df$slnone)
+var(traffic_df$grad_drivers_lic_law)
+var(traffic_df$percent_pop_aged_14_to_24)
+var(log(traffic_df$unemployment_rate))
+var(log(traffic_df$miles_driven_per_capita))
+```
+
+A3- Indentifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
+
+The independent variables have non-zero variance and not too many extreme values.
+
+
+```{r A4 test}
+pdwtest(pool.model)
+pdwtest(fd.model)
+pdwtest(within.model)
+pdwtest(between.model)
+```
+
+A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
+  + $E(u_{it}x_{it})$ = 0
+  + $E(x_{it}, \gamma_i)$ = 0
+  
+We don’t have evidence to reject the null hypothesis of no serial correlation in the between and first difference models. We do have evidence to reject the null hypothesis of no serial correlation in the within and pooled OLS models. 
+
+```{r check for exogenity}
+df <- traffic_df
+df$fit_model <- augment(pool.model)$.fitted
+df$resid_model <- residuals(pool.model)
+
+df_model <- data.frame(matrix(ncol = 3, nrow = 0))
+x <- c("year", "variable", "covariance")
+colnames(df_model) <- x
+
+for (t in unique(df$year)){
+  for (var_name in colnames(pool.model$model)[c(-1)]){
+    for (year_s in unique(df$year)){
+      c = cov(df[df$year == t,][var_name], df[df$year == year_s,]$resid_model)
+      df_model <- rbind(df_model,data.frame(year = t, variable = var_name, 
+                                            covariance = c[1]))
+    }
+  }
+}
+
+ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
+    xlab("Fitted values") + ylab("Covariance") + 
+  ggtitle("Strict Exogenity of Pooled Model")
+```
+
+A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
+
+
 The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. 
  
 The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
@@ -862,6 +946,9 @@ OLS estimation treats all observations as if they come from the same state and f
 Based on the pFtest result, p-value of 2.2e-16, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
 
 Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.
+
+
+
 
 # (10 points) Consider a Random Effects Model 
 

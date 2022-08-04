@@ -8,6 +8,10 @@ output:
 ```{r load packages, inlcude=FALSE}
 library(broom)
 library(car)
+
+install.packages("corrplot")
+library(corrplot)
+
 library(data.table)
 library(dplyr)
 library(fable )
@@ -32,6 +36,7 @@ library(Hmisc)
 library(knitr)
 library(lubridate)
 library(patchwork)
+library(performance)
 
 install.packages("plm")
 library(plm)
@@ -68,7 +73,7 @@ To answer this question, please complete the tasks specified below using the dat
 Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
 
 ```{r load data, echo = TRUE, warning=FALSE}
-#setwd("/home/rstudio/kumarn/MIDS/w271/Lab-3")
+setwd("/home/rstudio/kumarn/MIDS/w271/Lab-3")
 load(file="./data/driving.RData")
 
 # quick view of the data and its parameters
@@ -664,17 +669,17 @@ t.test(augment(base_model)$.fitted,
 ```
 
 ### Why fit a linear model as a starting point: 
-We have 1200 observations, which is a reasonably large number of observations. Granted that these observations aren't completely independent of each other. For a given state the year-over-year may bear some correlation. That said, the time frame covers 25years, and this can give enough "spacing" between data points that it is not correlated. Usually, it's the case that a linear model does as good a job as others if we have sufficient amount of data. 
+We have 1200 observations, which is a reasonably large number of observations. Granted that these observations aren't completely independent of each other. For a given state the year-over-year may bear some correlation. That said, the time frame covers 25years, and this can give enough "spacing" between data points that there are uncorrelated observations. The data across states can be considered independent. States have high degree of autonomy to set their own rules. Usually, it is the case that a linear model does as good a job as others if we have sufficient amount of data. 
 
 ### Model explanation: 
 This model basically checks to see if we can fit all the existing data as a linear combination of year dummy variables. In others words, can some linear combination of years able to do a reasonable fit given that such that the sum of difference of squares between predicted and actual values are minimized? A few additional points:
 
-A regression with only Dummy Variables is the ANOVA model. The intercept gives the mean value of traffic fatality rate. The coefficients associated with the dummy variables are not really the "slope" (non-continuous variable value); rather it's the differential intercept coefficient, which tells by how the intercept differs going from one year to another.
+A regression with only Dummy Variables is the ANOVA model. The intercept gives the mean value of traffic fatality rate. The coefficients associated with the dummy variables are not really the "slope" (due to non-continuous variable value); rather it's the differential intercept coefficient, which tells by how the intercept differs going from year to year.
 
 The model output gives most weight to the intercept and it is statistically significant. This shows that irrespective of the year variable there is a base fatality rate.
 
 ### Did driving become safer over this period?
-As we move from 1980 to 2004 we see that each year is contributing to a reduction on fatality. See the plot below. While the reduction is not monotonic with year the overall trend is toward reduction. Barring year 1981 all other year coefficients are statistically significant. The highest reduction is in 2004 (`r coef(base_model)[25]`).  We do see an increase from 1985 to 1989. However, the for most part the plot shows that as we move from 1981 toward 2004 we see a reduction in the fatality rate. This could be explained through a combination of technology (better cars, better roads, safety improvements) and, potentially, additional laws.
+As we move from 1980 to 2004 we see a reduction in fatality. See the plot below. While the reduction is not monotonic with year the overall trend is toward reduction. Barring year 1981 all other year coefficients are statistically significant. The highest reduction is in 2004 (`r as.numeric(coef(base_model)[25])`).  We do see an increase from 1985 to 1989. However, for the most part the plot shows that as we move from 1980 toward 2004 we see a reduction in the fatality rate. This could be explained through a combination of technology (better cars, better roads, safety improvements) and, potentially, additional laws. In summary, we see that 2004 has fatality rate reduced by `r as.numeric(coef(base_model)[25])` when compared to the base year of 1980.
 
 ```{r fatality coeff, echo=FALSE}
 plot(1981:2004, coef(base_model)[2:25], type="l", xlab="Years", 
@@ -764,10 +769,10 @@ The variables "bac08" and "bac10" indicate whether the state had a BAC limit of 
 The coefficients of "blood_alc_lim_08" -1.59190 with Std. Error of 0.45346, and that for "blood_alc_lim_10" is -0.62036  with Std. Error of 0.33589. While bac10 reduced the fatality rate it's not significant at 95% confidence level. The bac08 did reduce the fatality and it is statistically significant. It is much further away than two standard deviation. Thus, lower tolerance for blood alcohol content does reduce the law, and the level of 0.08% seems to do a good job of reducing fatalities in a significant way. Common sense thinking supports this result. 
 
 ### Effect of per se law
-The per se law codified by the variable "grad_drivers_lic_law" has a coefficient of -0.33880 with Std. Error of 0.52333, and thus not statistically significant. The associated p-value also reveals this.
+The per se law codified by the variable "grad_drivers_lic_law" has a coefficient of -0.33880 with Std. Error of 0.52333, and thus not statistically significant. The associated p-value also reveals this. It has a small statistically insignificant negative rate.
 
 ### Primary seat belt law
-This is represented by the variable "primary_seatbelt_law" with coefficient 0.14036 and Std. Error of 0.48367 did not have a statistically significant effect (even at 0.1 level). The coefficient is also small, indicating that the effect, if at all, is also small.
+This is represented by the variable "primary_seatbelt_law" with coefficient 0.14036 and Std. Error 0.48367 does not have a statistically significant effect (even at 0.1 level). The coefficient is small, indicating that the effect, if at all, is small.
 
 # (15 points) State-Level Fixed Effects 
 
@@ -818,15 +823,14 @@ stargazer(pool.model, fd.model, between.model, within.model, type = "text",
           column.labels = c("Pooled", "FD", "Between", "Within"))
 ```
 
-???
 ## Blood Alcohol variable coefficient exploration
-All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest for the Within model and highest for the Between model.
+The variables "bac08" and "bac10" indicated if the states implemented the respective laws. The Pooled model shows that for states that implemented "bac08" they saw a reduction of 2.431 in the fatality rate, and it is statistically significant. The impact of "bac10" on fatality rate is relatively lower at 1.257, and is statistically significant. The "within" model reflects similar results. The respective coefficients are lower because we subtract the mean values of the variables in the "within" model. As for First Difference (FD) model, the variable is zero is a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. This leads to a coefficient value that is not statistically significant. Finally, for the "between" model we take average for a unit across all time periods. We expect the model to not show significance likely due to the different times when each state implemented the law. The averaging effect diminished the values of this variable.
 
 ## Per se laws variable coefficient exploration
-Except for Between model all other models are consistent in the sign of the Per se law variable coefficient. Only Within model illustrates higher significance and larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
+???????
 
 ## Primary seat-belt variable coefficient exploration
-Except for Pooled OLS model all other models are consistent in the sign of the Primary seat-belt variable coefficient. Only Within model illustrates higher significance and Between model exhibits larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
+???????
 
 ## Reliable model and the reason behind it
 
@@ -851,12 +855,18 @@ For each models the assumptions that should hold true are
 **Within Model Assumptions** - A1,A2,A3,A5
 **Between Model Assumptions** - A1,A2,A3,A5
 
-**A1** - Linearity: ???
-residuals vs fitted
-corr matrix
-From the below Q-Qplot the residuals are approximately normally distributed for all the 4 models.
+**A1** - Linearity:
+```{r linearity tests}
+colin_data <- traffic_df
+colin_data$logmiles_driven <- log(colin_data$miles_driven_per_capita)
+colin_data$logunemp <- log(colin_data$unemployment_rate)
 
-```{r tests}
+colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,secondary_seatbelt_law,sl75,slnone,grad_drivers_lic_law, 
+                                   percent_pop_aged_14_to_24,logunemp, 
+                                   logmiles_driven)
+corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5,
+         type='lower')
+
 par(mfrow=c(2,2))
 qqnorm(pool.model$residuals)
 qqline(pool.model$residuals)
@@ -880,13 +890,10 @@ Variance inflation factor (VIF) is a measure of the amount of multicollinearity 
 
 Multicollinearity should not be confused with a raw strong correlation between predictors. What matters is the association between one or more predictor variables, conditional on the other variables in the model. In a nutshell, multicollinearity means that once you know the effect of one predictor (bac08), the value of knowing the other predictor (bac10) is rather low. Thus, one of the predictors doesn't help much in terms of better understanding the model or predicting the outcome. As a consequence, if multicollinearity is a problem, the model seems to suggest that the predictors in question don't seems to be reliably associated with the outcome (low estimates, high standard errors), although these predictors actually are strongly associated with the outcome, i.e. indeed might have strong effect
 
-```{r vif test}
-library(performance)
+```{r collinearity test}
 check_collinearity(pool.model)
 ```
-Proof: The regressor have non-zero variance and not too many extreme values (but constant)
-Based on the below variance information, the independent variables have non-zero 
-variance and not too many extreme values.
+Proof: The regressor have non-zero variance and not too many extreme values (but constant). Based on the below variance information, the independent variables have non-zero variance and not too many extreme values.
 
 ```{r non-zero variance proof}
 var(traffic_df$bac08)
@@ -899,7 +906,6 @@ var(traffic_df$percent_pop_aged_14_to_24)
 var(log(traffic_df$unemployment_rate))
 var(log(traffic_df$miles_driven_per_capita))
 ```
-
 
 **A4**- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
 
@@ -919,12 +925,14 @@ pdwtest(between.model)
 pbgtest(between.model, order = 2)
 ```
 
-We don’t have evidence to reject the null hypothesis of no serial correlation in the between models. We do have evidence to reject the null hypothesis of no serial correlation in the within and pooled OLS models. 
-For first difference estimator model, Durbin-Watson and Breusch-Godfrey/Wooldridge test shows contradictory results.
+**We don’t have evidence to reject the null hypothesis of no serial correlation in the between models. We do have evidence to reject the null hypothesis of no serial correlation in the within and pooled OLS models. For first difference estimator model, Durbin-Watson and Breusch-Godfrey/Wooldridge test shows contradictory results. The first difference model usually ends up with correlated error terms, except when the error is random walk. For a generic AR(1) process we do expect to see serial correlation.**
 
+**A5**- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$.
 
-```{r check for exogenity}
+```{r check for exogenity pool}
 df <- traffic_df
+df$`log(unemployment_rate)` <- log(df$unemployment_rate)
+df$`log(miles_driven_per_capita)` <- log(df$miles_driven_per_capita)
 df$fit_model <- augment(pool.model)$.fitted
 df$resid_model <- residuals(pool.model)
 
@@ -934,20 +942,21 @@ colnames(df_model) <- x
 
 for (t in unique(df$year)){
   for (var_name in colnames(pool.model$model)[c(-1)]){
-    for (year_s in unique(df$year)){
-      c = cov(df[df$year == t,][var_name], df[df$year == year_s,]$resid_model)
+    for (s in unique(df$year)){
+      c = cov(df[df$year == t,][var_name], df[df$year == s,]$resid_model)
       df_model <- rbind(df_model,data.frame(year = t, variable = var_name, 
                                             covariance = c[1]))
     }
   }
 }
-
+```
+```{r exogenity plot pooled, echo=FALSE}
 ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
     xlab("Fitted values") + ylab("Covariance") + 
   ggtitle("Strict Exogenity of Pooled Model")
 ```
 
-A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. ???
+**Significant number of correlations are non-zero, which means that the assumption of lack of correlation is incorrect. Hence the estimates are not unbiased; the model may be consistent, though. EDA showed that there was an overall increasing trend in miles driven and an overall decreasing trend in total fatality rate. The plot above shows that there is a violation in the strict exogeneity assumption. However we chose to include the per-capita miles driven variable as miles driven has to be an explanatory variable in predicting total fatality rate (if miles driven is zero the total fatalities from auto accidents would be zero too).**
 
 ## Verdict ???
 The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. In pooled OLS you assume that all members of the panel obey the exact same regression model - same coefficients and same constant.
@@ -962,12 +971,11 @@ OLS estimation treats all observations as if they come from the same state and f
 ```{r Fixed Effect Tests}
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
-pFtest(between.model, pool.model)
-pFtest(within.model, pool.model)
+pFtest(pool.model, between.model)
+pFtest(pool.model, within.model)
 ```
 
-Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. 
-This means we should include state and/or time fixed effects in our model.
+Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
 
 Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. ???This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.???
 
@@ -986,59 +994,54 @@ re.model <- plm(total_fatality_rate ~ year+bac10 + adm_lic_revoc_law + primary_s
                   secondary_seatbelt_law + sl75 + slnone + 
                   grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                   log(unemployment_rate) + log(miles_driven_per_capita), 
-                data=traffic.new.row, index=c("state", "year"), model="random")
+                data=traffic_df, index=c("state", "year"), model="random")
 ```
 
 The first assumption of the random effects model is that there are no perfect linear relationships among the explanatory variables. 
 
-```{r}
-colin_data = traffic.new.row 
-colin_data$logmiles_driven = log(colin_data$miles_driven_per_capita)
-colin_data$logunemp = log(colin_data$unemployment_rate)
+```{r checks for linear relationship}
+colin_data <- traffic_df
+colin_data$logmiles_driven <- log(colin_data$miles_driven_per_capita)
+colin_data$logunemp <- log(colin_data$unemployment_rate)
 
-colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,secondary_seatbelt_law,sl75,slnone,grad_drivers_lic_law, percent_pop_aged_14_to_24,logunemp, logmiles_driven)
-corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5, type='lower')
+colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,secondary_seatbelt_law,sl75,slnone,grad_drivers_lic_law, 
+                                   percent_pop_aged_14_to_24,logunemp, 
+                                   logmiles_driven)
+corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5, 
+         type='lower')
 ```
-From the above correlation plot we see some concerning correlations, particularly between percent of population aged 14 to 24 and the year variable as well as the log of unemployment and the year. These high correlations may indicate multicollinearity (or if there is a perfect linear relationship between variables). 
+**From the above correlation plot we see some concerning correlations, particularly between percent of population aged 14 to 24 and the year variable as well as the log of unemployment and the year. These high correlations may indicate multicollinearity (or if there is a perfect linear relationship between variables).**
 
-additionally, we will examine the Variance Inflation Factor matrix of the model for multicollinearity. 
+**Additionally, we will examine the Variance Inflation Factor matrix of the model for multicollinearity.**
 
-```{r}
+```{r vif for RE model}
 car::vif(re.model)
 ```
-We see high values for year=(1995, 1996, 2000, 2003, 2004) percent_pop_aged_14_to_24, and log(miles_driven_per_capita) indicating the possible presence of multicollinearity in these variables. 
+**We see high values for year=(1995, 1996, 2000, 2003, 2004) percent_pop_aged_14_to_24, and log(miles_driven_per_capita) indicating the possible presence of multicollinearity in these variables.**
 
-Assessing our analysis of multicollinearity in the model explanatory variables, we have not provided sufficient evidence in supporting the lack of perfect multicollinearity between the variables as there are some strong correlations (linear relationships) between certain variables. 
+**Assessing our analysis of multicollinearity in the model explanatory variables, we have not provided sufficient evidence in supporting the lack of perfect multicollinearity between the variables as there are some strong correlations (linear relationships) between certain variables.**
 
-
-The second assumption is that there is no correlation between the unobserved effect (random and fixed effects) and the explanatory variables. Using a random effects model imposes the error structure that the error term $ v_{it} $ is equal to the sum of variation between groups and variation within groups onto the model residuals, allowing to properly specify the residuals and more efficiently estimate the coefficients of interest. This requires the assumption of independence between random effects and the other predictors in the model. 
-
-The assumptions for the fixed effect model are discussed above, the additional assumption of independence of random effects and other predictors in the model is evaluated below. 
-
-The test we run is the Hausman Test for fixed versus random effects. The null hypothesis is that the random effects model is acceptable while the alternative hypothesis is that there is correlation between residuals and predictors, meaning that we should use the FE model. 
-
-
+**The second assumption is that there is no correlation between the unobserved effect (random and fixed effects) and the explanatory variables. Using a random effects model imposes the error structure that the error term** $v_{it}$ **is equal to the sum of variation between groups and variation within groups onto the model residuals, allowing to properly specify the residuals and more efficiently estimate the coefficients of interest. This requires the assumption of independence between random effects and the other predictors in the model. The assumptions for the fixed effect model are discussed above, the additional assumption of independence of random effects and other predictors in the model is evaluated below. The test we run is the Hausman Test for fixed versus random effects. The null hypothesis is that the random effects model is acceptable while the alternative hypothesis is that there is correlation between residuals and predictors, meaning that we should use the FE model.**
 
 ```{r model comparison}
 phtest(between.model, re.model)
 #traffic.new.row
 ```
 
-The Hausman test results in a p-value of `phtest(between.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
+>The Hausman test results in a p-value of `phtest(between.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
 
-The third assumption is that of homoskedastic errors, which we can test below using the Pesaran's CD test: 
+>The third assumption is that of homoskedastic errors, which we can test below using the Pesaran's CD test: 
 
-```{r}
+```{r pcdtest for RE}
 pcdtest(re.model)
 ```
-While the p-value is not statistically significant indicating that we do not have support to reject the null hypothesis in favor of the alternative hypothesis of cross-sectional dependence, we have already violated assumption 2 and likely assumption 1, and thus should not proceed with this model. 
+**While the p-value is not statistically significant indicating that we do not have support to reject the null hypothesis in favor of the alternative hypothesis of cross-sectional dependence, we have already violated assumption 2 and likely assumption 1, and thus should not proceed with this model.**
 
-Overall, the main assumption of the RE model, assumption 2, was violated by showing that the RE model is inconsistent. Additionally, there are concerns of multicollinearity in the data. From this, we will not proceed with estimating the random effects model. 
+**Overall, the main assumption of the RE model, assumption 2, was violated by showing that the RE model is inconsistent. Additionally, there are concerns of multicollinearity in the data. From this, we will not proceed with estimating the random effects model.** 
 
-If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are incorrectly uncorrelated with the predictors - given that there is correlation, this will introduce bias into the standard errors. 
+**If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are incorrectly uncorrelated with the predictors - given that there is correlation, this will introduce bias into the standard errors.**
 
 # (10 points) Model Forecasts 
-
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
 
 - Comparing monthly miles driven in 2018 to the same months during the pandemic: 
@@ -1074,7 +1077,7 @@ drive_2018$group <- 2018
 comparison <- rbind(drive_2018, drive_pandemic)
 ```
 
-```{r visauls}
+```{r forecast visauls}
 ggplot(comparison, aes(x=month, y=TRFVOLUSM227NFWA, group=group)) + 
   geom_line(aes(color=group)) + ylab('Miles Driven') + 
   ggtitle('Miles Driven in 2018 vs Pandemic Months')
@@ -1098,21 +1101,19 @@ perc2 <- scales::percent(drive_pandemic$TRFVOLUSM227NFWA[4] /
                            drive_pandemic$TRFVOLUSM227NFWA[3] - 1)
 ```
 
-**March 2018: 42946. May 2021: 53389**
-
 >The maximum increase in driving was from April 2020 to May 2020, where driving increased by `r may_driving_2021` millions of miles. This represents a `r perc2` increase month over month. 
 
 >Now, use these changes in driving to make forecasts from the models.
 
 ```{r FE estimate on fatality with increase by COVID boom}
-effect1 <- within.model$coefficients['log(number_of_miles_driven_per_capita)'] *
+effect1 <- between.model$coefficients['log(miles_driven_per_capita)'] *
   (drive_pandemic$TRFVOLUSM227NFWA[4]/drive_pandemic$TRFVOLUSM227NFWA[3])
 ```
 
->If the number of miles driven per-capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect` percent.
+>If the number of miles driven per-capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect1` percent (in the log of the per-capita miles driven).
 
 ```{r FE estimate on fatality with decrese by COVID boom}
-effect2 <- within.model$coefficients['log(number_of_miles_driven_per_capita)'] * 
+effect2 <- between.model$coefficients['log(miles_driven_per_capita)'] * 
   (-(1-drive_pandemic_month$TRFVOLUSM227NFWA[4]/drive_2018$TRFVOLUSM227NFWA[4]))
 ```
 If the number of miles driven per capita increased by as much as the COVID boom, the consequences of traffic fatalities would be expected to be an increase of `r effect2` percent. 
@@ -1124,14 +1125,24 @@ If there were serial correlation or heteroskedasticity in the idiosyncratic erro
 **Serial correlation or heteroskedasticity in the idiosyncratic errors will cause the standard errors for the model to be incorrect. CLT can be invoked for first-difference models (Wooldridge). However, for fixed effects models, this is not necessarily the case as we'll likely see AR(1) effects in the error terms. Unless the AR(1) is a random walk we'll have to account for the AR(1) correlation. In case of random walk the first difference will be white noise and thus can be worked around. Let us use the Breusch-Godfrey test to check for serial correlation.**
 
 ```{r pbg test for serial correlation}
+pbgtest(pool.model)
+pbgtest(fd.model)
+pbgtest(within.model)
 pbgtest(between.model)
 ```
 
-**The test reveals serial correlation - the p-value does not reject the null hypothesis of no serial correlation. Thus the computed standard errors is likely to not have serial correlation.**
+**The test reveals for the serial correlation of the "between model" is the only one to not show serial correlation. The p-value does not reject the null hypothesis of no serial correlation. Thus the computed standard errors is likely to not have serial correlation.**
 
-**Plotting the resideuals below we do not see a clear trend of divergence in errors across the index, helping support the above test that there is a lack of serial correlation in the model** 
+**Let us now look at the serial correlation of the residuals** 
 
-```{r}
-plot(between.model$residuals)
+```{r plot model resids}
+acf(between.model$residuals)
 ```
 
+**The ACF plot confirms that the correlation is of significance only at lag 0, and thus no serial correlation.** 
+
+```{r acf for other models, include=FALSE}
+acf(pool.model$residuals)
+acf(fd.model$residuals)
+acf(within.model$residuals)
+```

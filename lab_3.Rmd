@@ -56,6 +56,9 @@ install.packages("vcd")
 library(vcd)
 
 library(xtable)
+
+if(!"ggthemes"%in%rownames(installed.packages())) {install.packages("ggthemes")} 
+library(ggthemes)
 ```
 
 ```{r set themes}
@@ -859,6 +862,120 @@ For each models the assumptions that should hold true are
 **Between Model Assumptions** - A1,A2,A3,A5
 
 **A1** - Linearity:
+
+```{r variable lienarity}
+
+ traffic_df %>%
+  ggplot(aes(bac08,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("bac08") +
+  ylab("Fatality")
+
+ traffic_df %>%
+  ggplot(aes(bac10,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("bac10") +
+  ylab("Fatality")
+
+  traffic_df %>%
+  ggplot(aes(adm_lic_revoc_law,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+    theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("perse") +
+  ylab("Fatality")
+
+ traffic_df %>%
+  ggplot(aes(primary_seatbelt_law,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+   theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("prim seat belt") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(secondary_seatbelt_law,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("secon seat belt") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(sl75,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("speed 75") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(slnone,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("speed none") +
+  ylab("Fatality")
+traffic_df %>%
+  ggplot(aes(grad_drivers_lic_law,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("license") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(percent_pop_aged_14_to_24,total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("age 14- 24") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(log(unemployment_rate),total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("log unemployment") +
+  ylab("Fatality")
+
+traffic_df %>%
+  ggplot(aes(log(miles_driven_per_capita),total_fatality_rate,color=state)) +
+  facet_wrap(~state) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm",color="black") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none") +
+  xlab("log miles_driven_per_capita") +
+  ylab("Fatality")
+```
+The above plot for each independent **variable** used in the model illustrates the relationship between dependent and the independent variables are linear.
+
 ```{r linearity tests}
 colin_data <- traffic_df
 colin_data$logmiles_driven <- log(colin_data$miles_driven_per_capita)
@@ -869,20 +986,8 @@ colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,
                                    logmiles_driven)
 corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5,
          type='lower')
-
-par(mfrow=c(2,2))
-qqnorm(pool.model$residuals)
-qqline(pool.model$residuals)
-
-qqnorm(fd.model$residuals)
-qqline(fd.model$residuals)
-
-qqnorm(within.model$residuals)
-qqline(within.model$residuals)
-
-qqnorm(between.model$residuals)
-qqline(between.model$residuals)
 ```
+The correlation plot proves that the +1 and -1 correlations do not exist except for year and percent population aged 14 to 24.
 
 **A2** - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
 
@@ -976,6 +1081,20 @@ pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
 pFtest(pool.model, between.model)
 pFtest(pool.model, within.model)
+
+
+par(mfrow=c(2,2))
+qqnorm(pool.model$residuals)
+qqline(pool.model$residuals)
+
+qqnorm(fd.model$residuals)
+qqline(fd.model$residuals)
+
+qqnorm(within.model$residuals)
+qqline(within.model$residuals)
+
+qqnorm(between.model$residuals)
+qqline(between.model$residuals)
 ```
 
 Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.

@@ -818,7 +818,7 @@ stargazer(pool.model, fd.model, between.model, within.model, type = "text",
           column.labels = c("Pooled", "FD", "Between", "Within"))
 ```
 
-
+???
 ## Blood Alcohol variable coefficient exploration
 All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest for the Within model and highest for the Between model.
 
@@ -851,7 +851,7 @@ For each models the assumptions that should hold true are
 **Within Model Assumptions** - A1,A2,A3,A5
 **Between Model Assumptions** - A1,A2,A3,A5
 
-**A1** - Linearity: 
+**A1** - Linearity: ???
 residuals vs fitted
 corr matrix
 From the below Q-Qplot the residuals are approximately normally distributed for all the 4 models.
@@ -873,7 +873,7 @@ qqline(between.model$residuals)
 
 **A2** - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
 
-**A3**- Identifiability:  
+**A3**- Identifiability:   ???
 Proof: The regressors are not perfectly collinear, including a constant
 
 Variance inflation factor (VIF) is a measure of the amount of multicollinearity in a set of multiple regression variables. A high VIF indicates that the associated independent variable is highly collinear with the other variables in the model. The below result illustrates low VIF (all below 8) the regressors are not perfectly collinear.  
@@ -947,9 +947,9 @@ ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
   ggtitle("Strict Exogenity of Pooled Model")
 ```
 
-A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
+A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. ???
 
-## Verdict
+## Verdict ???
 The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. 
  
 The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
@@ -962,12 +962,14 @@ OLS estimation treats all observations as if they come from the same state and f
 ```{r Fixed Effect Tests}
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
 pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
+pFtest(between.model, pool.model)
 pFtest(within.model, pool.model)
 ```
 
-Based on the pFtest result, p-value of 2.2e-16, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
+Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. 
+This means we should include state and/or time fixed effects in our model.
 
-Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.
+Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. ???This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.???
 
 # (10 points) Consider a Random Effects Model 
 

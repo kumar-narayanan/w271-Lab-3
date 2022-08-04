@@ -449,7 +449,7 @@ hist(log(traffic_df$bac10), main="Historgam: Alcohol level - 0.10%",
 
 **From the histograms above we see that some of the left-skewed histogram of the variables in its natural form is coming closer to that of a normal distribution, when log-transformed. Notable exceptions to the statement just made are the discrete variables, in particular, Minimum Age and Speed Limit variables. The reasons are obvious. Log transformation doesn't change the fundamentally non-continuous nature of these variables. As alluded to earlier, we will take advantage of the log-transform in the models.**
 
-```{r ind variables boxplots by state, echo=FALSE, fig.height=10, fig.width=6}
+```{r ind var by state, warning=FALSE, echo=FALSE, fig.height=10, fig.width=6}
 box_ex_1 <- traffic_pdf %>% group_by(state_code) %>%
   ggplot(aes(x = reorder(state_code, state_population), y = state_population)) +
   geom_boxplot() + labs(x = "States",  y = "Population") +
@@ -827,16 +827,13 @@ stargazer(pool.model, fd.model, between.model, within.model, type = "text",
 ```
 
 ## Blood Alcohol variable coefficient exploration
-                               
-The variables "bac08" and "bac10" explains the effect of the states implementing the blood alcohol level laws. The Pooled model shows that for states that implemented "bac08" saw a reduction of 2.431 in the fatality rate, and it is statistically significant. The impact of "bac10" on fatality rate is relatively lower at 1.257, and is statistically significant. The "within" model reflects similar results with a bac08/10 coefficient that reduces fatality by 1.222 and 0.912, respectively. The coefficients are lower because we subtract the mean values of the variables in the "within" model. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. We get similar results for the coefficients. The reason for bac10 getting significant results compared to bac08, is due to the number of observations relatively more skewed to 1.0. Finally, for the "between" model we take average for a unit across all time periods, thus the effects are pronounced higher. We expect the model to not show significance likely due to the different times when each state implemented the law. As expected, the standard error is very high for "between" when compared to other models.
+The variables "bac08" and "bac10" explains the effect of the states implementing the blood alcohol level laws. The Pooled model shows that for states that implemented "bac08" saw a reduction of 2.431 in the fatality rate, and it is statistically significant. The impact of "bac10" on fatality rate is relatively lower at 1.257, and is statistically significant. The "within" model reflects similar results with a bac08/10 coefficient that reduces fatality by 1.222 and 0.912, respectively. The coefficients are lower because we subtract the mean values of the variables in the "within" model. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. We get similar results for the coefficients. The reason for bac08 getting higher impact compared to bac10 is due to the number of observations relatively more skewed to 1.0. Finally, for the "between" model we take average for a unit across all time periods, thus the effects are pronounced higher. We expect the model to not show significance likely due to the different times when each state implemented the law. As expected, the standard error is higher for "between" model when compared to other models.
 
 ## Per se laws variable coefficient exploration
-
-The variable "adm_lic_revoc_law" (alias "perse") explains the effect of the states implementing the perse law - "suspend or revoke the driving privilege of persons who are arrested for driving with a BAC of . 08% or more". The Pooled model shows that for states that implemented "perse" saw a reduction of 0.461 in the fatality rate, and it is not statistically significant. The "fd" model reflects similar results, with a reduction of 0.613 and the "within" model illustrates significant result with a reduction of 1.107 in fatality rate. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. This leads to a coefficient value that is not statistically significant. Finally, for the "between" model we take average for a unit across all time periods, thus the coefficient shows a positive number with no significance. We expect the model to not show significance likely due to the different times when each state implemented the law. The averaging effect diminished the values of this variable. As expected, the standard error is very high for "between" when compared to other models.
+The variable "adm_lic_revoc_law" (alias "perse") explains the effect of the states implementing the perse law - "suspend or revoke the driving privilege of persons who are arrested for driving with a BAC of . 08% or more". The Pooled model shows that for states that implemented "perse" saw a reduction of 0.461 in the fatality rate, and it is not statistically significant. The "FD" model reflects similar results, with a reduction of 0.613 and the "within" model illustrates significant result with a reduction of 1.107 in fatality rate. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. This leads to a coefficient value that is not statistically significant. Finally, for the "between" model we take average for a unit across all time periods, thus the coefficient shows a positive number with no significance. We expect the model to not show significance likely due to the different times when each state implemented the law. The averaging effect diminished the values of this variable. As expected, the standard error is higher for "between" model when compared to other models.
 
 ## Primary seat-belt variable coefficient exploration
-
-The variable "primary_seatbelt_law" explains the effect of the states mandating "driver to wear the seat belt" as a law. The Pooled model shows that for states that implemented "primary_seatbelt_law" saw a increase in fatality of 0.192, and it is not statistically significant. In order for pooled OLS to produce a consistent estimator of $\beta_1$, we would have to assume that the unobserved effect, $a_i$, is uncorrelated with $x_{it}$. Even if we assume that, pooled OLS is biased and inconsistent if $a_i$ and $x_{it}$ are correlated, thus heterogeneity bias or bias caused from omitting a time-constant variable. The "fd" model reflects a reduction of 0.355 and the "within" model illustrates significant result with a reduction of 1.159 in fatality rate. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. This leads to a coefficient value that is not statistically significant. Finally, for the "between" model we take average for a unit across all time periods thus the coefficient shows larger number with no significance. As expected the standard error is very high for "between" when compared to other models.
+The variable "primary_seatbelt_law" explains the effect of the states mandating "driver to wear the seat belt" as a law. The Pooled model shows that for states that implemented "primary_seatbelt_law" saw an increase in fatality of 0.192, but it is not statistically significant. In order for pooled OLS to produce a consistent estimator of $\beta_1$, we would have to assume that the unobserved effect, $a_i$, is uncorrelated with $x_{it}$. Assuming that correlation between $a_i$ and $x_{it}$ exists we end up with heterogeneity bias or bias caused from omitting a time-constant variable. The "FD" model reflects a reduction of 0.355 and the "within" model illustrates significant result with a reduction of 1.159 in fatality rate. As for First Difference (FD) model, the variable is zero if a state had implemented the law in consecutive years. Thus, the FD tends to minimize the effect of these variables. This leads to a coefficient value that is not statistically significant. Finally, for the "between" model we take average for a unit across all time periods thus the coefficient shows larger number with no significance. As expected the standard error is very high for "between" when compared to other models.
 
 ## Reliable model and the reason behind it
 
@@ -863,8 +860,7 @@ For each models the assumptions that should hold true are
 
 **A1** - Linearity:
 
-```{r variable lienarity}
-
+```{r variable lienarity, echo=FALSE, warning=FALSE}
  traffic_df %>%
   ggplot(aes(bac08,total_fatality_rate,color=state)) +
   facet_wrap(~state) +
@@ -974,34 +970,21 @@ traffic_df %>%
   xlab("log miles_driven_per_capita") +
   ylab("Fatality")
 ```
-The above plot for each independent **variable** used in the model illustrates the relationship between dependent and the independent variables are linear.
-
-```{r linearity tests}
-colin_data <- traffic_df
-colin_data$logmiles_driven <- log(colin_data$miles_driven_per_capita)
-colin_data$logunemp <- log(colin_data$unemployment_rate)
-
-colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,secondary_seatbelt_law,sl75,slnone,grad_drivers_lic_law, 
-                                   percent_pop_aged_14_to_24,logunemp, 
-                                   logmiles_driven)
-corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5,
-         type='lower')
-```
-The correlation plot proves that the +1 and -1 correlations do not exist except for year and percent population aged 14 to 24.
+The above plot for each independent **variable** used in the model illustrates the relationship between dependent and the independent variables is linear.
 
 **A2** - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
 
-**A3**- Identifiability:   ???
+**A3**- Identifiability:
 Proof: The regressors are not perfectly collinear, including a constant
 
-Variance inflation factor (VIF) is a measure of the amount of multicollinearity in a set of multiple regression variables. A high VIF indicates that the associated independent variable is highly collinear with the other variables in the model. The below result illustrates low VIF (all below 8) the regressors are not perfectly collinear.  
+Variance inflation factor (VIF) is a measure of the amount of multicollinearity in a set of multiple regression variables. A high VIF indicates that the associated independent variable is highly collinear with the other variables in the model. The below result illustrates low VIF (all below 8) the regressors are not perfectly collinear. When we see multiple variables with high VIF score (conventionally, above 8) then the test recommends that we retain one, and drop the others. The VIF scores tell us that these variables are linearly related, and hence can be dropped if we retain only one.
 
-Multicollinearity should not be confused with a raw strong correlation between predictors. What matters is the association between one or more predictor variables, conditional on the other variables in the model. In a nutshell, multicollinearity means that once you know the effect of one predictor (bac08), the value of knowing the other predictor (bac10) is rather low. Thus, one of the predictors doesn't help much in terms of better understanding the model or predicting the outcome. As a consequence, if multicollinearity is a problem, the model seems to suggest that the predictors in question don't seems to be reliably associated with the outcome (low estimates, high standard errors), although these predictors actually are strongly associated with the outcome, i.e. indeed might have strong effect
+Multicollinearity should not be confused with a raw strong correlation between predictors. What matters is the association between one or more predictor variables, conditional on the other variables in the model. In a nutshell, multicollinearity means that once you know the effect of one predictor (bac08), the value of knowing the other predictor (bac10) is rather low. Thus, one of the predictors doesn't help much in terms of better understanding the model or predicting the outcome given that the other one is part of the model. 
 
 ```{r collinearity test}
 check_collinearity(pool.model)
 ```
-Proof: The regressor have non-zero variance and not too many extreme values (but constant). Based on the below variance information, the independent variables have non-zero variance and not too many extreme values.
+Proof: The regressors have non-zero variance and not too many extreme values (but constant). Based on the below variance information, the independent variables have non-zero variance and not too many extreme values.
 
 ```{r non-zero variance proof}
 var(traffic_df$bac08)
@@ -1066,22 +1049,24 @@ ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
 
 **Significant number of correlations are non-zero, which means that the assumption of lack of correlation is incorrect. Hence the estimates are not unbiased; the model may be consistent, though. EDA showed that there was an overall increasing trend in miles driven and an overall decreasing trend in total fatality rate. The plot above shows that there is a violation in the strict exogeneity assumption. However we chose to include the per-capita miles driven variable as miles driven has to be an explanatory variable in predicting total fatality rate (if miles driven is zero the total fatalities from auto accidents would be zero too).**
 
-## Verdict ???
-The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. In pooled OLS you assume that all members of the panel obey the exact same regression model - same coefficients and same constant.
+## Verdict
+Pooled model uses all the observations as if these are independently measured. In general, for panel data, we know that this assumption is not true. If assumptions $A1 - A4$ are valid then pooled OLS will give consistent results. For the data set we have these assumptions don't hold good - in particular the IID assumption (A2) is not valid. Thus, pooled estimates are not unbiased and likely not consistent either. We must recognize that the pooled model had $R^2 = 0.628$, which means that the explanatory variables do capture most of the variance. This shouldn't be a surprise given that we have 1200 observations. As the number of observations go up the pooled OLS comes close to "within" or "between" models.
  
-The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
-All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$. In a fixed-effects panel model, there may be a separate constant for each member of the panel but the other coefficients are assumed to be constant across all panel members.
+The Fixed Effect (FE) model with first difference gets rid of the fixed effects (and its correlation with the explanatory variables). However, the error difference ($\Delta u_i = u_{i2} - u_{i1}$) may not be uncorrelated with all explanatory variables. The error term $u_{i1}$ is guaranteed to be uncorrelated to all $x_{i1}$ but may be correlated to $x_{i2}$. In our case, unobserved factors such as increased highway patrol may remain the same or vary across time. Hence, the first difference model, again, is not likely to give unbiased or consistent estimate. The model has $R^2 = 0.178$, which means that the model has left a lot of variance in the residuals, instead of accounting for in the explanatory variables.
 
-Based on the above pFtest results, we reject the null hypothesis of no fixed effects. This means we **should include state and/or time fixed effects** in our model.
+The "within" model has $R^2 = 0.642$. This model, which includes the de-meaned values of the outcome and the explanatory variables, seems to perform well. The result of de-mean action removed the fixed effect variables and preserves the error terms uncorrelated characteristic with the explanatory variables. The residuals seem to approximate a normal distribution, shown in the QQ-Plot below. This model is probably a tad better than the pooled OLS but it is very close.
 
-OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly. As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities. This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
+The "between" model has $R^2 = 0.822$ and does the best job of capturing most of the variance in the model. The QQ-Plot also shows adherence to a normal distribution. The number of observations are only 48, as expected. This model does a good job because the average of each state across 25 years are likely independent of each other. In general, observation across each state tend to be independent. By and large each state is autonomous in setting driving regulations.
+
+Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model. The QQ-Plot for the "between" model gives the best results along with the $R^2$ values. Thus, we choose the "between" model as the most optimal one.
+
+Comparing both the Wooldridge's hypothesis tests, we see that the both the models (FD and FE) suffer from serial correlation. This suggests that both the models are not good and we need to fit a better model.
 
 ```{r Fixed Effect Tests}
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
-pFtest(pool.model, between.model)
-pFtest(pool.model, within.model)
-
+pwfdtest(fd.model, data=traffic_df, index=c("state","year"), h0="fe")
+pwfdtest(fd.model, data=traffic_df, index=c("state","year"), h0="fd")
+pFtest(between.model,pool.model)
+pFtest(within.model, pool.model)
 
 par(mfrow=c(2,2))
 qqnorm(pool.model$residuals)
@@ -1096,10 +1081,6 @@ qqline(within.model$residuals)
 qqnorm(between.model$residuals)
 qqline(between.model$residuals)
 ```
-
-Based on the pFtest result, p-value of 0.002243, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
-
-Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. ???This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.???
 
 # (10 points) Consider a Random Effects Model 
 

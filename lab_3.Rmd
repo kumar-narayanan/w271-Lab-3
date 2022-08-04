@@ -950,10 +950,10 @@ ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
 A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. ???
 
 ## Verdict ???
-The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. 
+The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. In pooled OLS you assume that all members of the panel obey the exact same regression model - same coefficients and same constant.
  
 The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
-All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$
+All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$. In a fixed-effects panel model, there may be a separate constant for each member of the panel but the other coefficients are assumed to be constant across all panel members.
 
 Based on the above pFtest results, we reject the null hypothesis of no fixed effects. This means we **should include state and/or time fixed effects** in our model.
 

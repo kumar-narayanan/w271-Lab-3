@@ -783,58 +783,44 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - Are these assumptions reasonable in the current context?
 
 ```{r Fixed Effects models}
-traffic.new.row <- traffic_df
-row.names(traffic.new.row) <- NULL
 pool.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                     adm_lic_revoc_law + primary_seatbelt_law + 
                     secondary_seatbelt_law + sl75 + slnone + 
                     grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                     log(unemployment_rate) + 
-                    log(miles_driven_per_capita), data=traffic.new.row, 
+                    log(miles_driven_per_capita), data=traffic_df, 
                   index=c("state", "year"), model="pooling")
 fd.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                   adm_lic_revoc_law + primary_seatbelt_law + 
                   secondary_seatbelt_law + sl75 + slnone + 
                   grad_drivers_lic_law + percent_pop_aged_14_to_24 +
                   log(unemployment_rate) + log(miles_driven_per_capita), 
-                data=traffic.new.row, index=c("state", "year"), model="fd")
+                data=traffic_df, index=c("state", "year"), model="fd")
 between.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                        adm_lic_revoc_law + primary_seatbelt_law + 
                        secondary_seatbelt_law + sl75 + slnone + 
                        grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                        log(unemployment_rate) + log(miles_driven_per_capita), 
-                     data=traffic.new.row, index=c("state", "year"), 
+                     data=traffic_df, index=c("state", "year"), 
                      model="between")
 within.model <- plm(total_fatality_rate ~ year + bac08 + bac10 + 
                       adm_lic_revoc_law + primary_seatbelt_law + 
                       secondary_seatbelt_law + sl75 + slnone + 
                       grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                       log(unemployment_rate) + log(miles_driven_per_capita), 
-                    data=traffic.new.row, index=c("state", "year"), 
+                    data=traffic_df, index=c("state", "year"), 
                     model="within")
 ```
+
 ```{r model ouputs, echo=FALSE}
 stargazer(pool.model, fd.model, between.model, within.model, type = "text",
           omit.stat = c("ser","f","adj.rsq"), dep.var.labels = "",
           column.labels = c("Pooled", "FD", "Between", "Within"))
 ```
 
-```{r Fixed Effect Tests}
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
-pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
-pFtest(within.model, pool.model)
-```
-
-```{r pbg test}
-pbgtest(pool.model)
-pbgtest(fd.model)
-pbgtest(within.model)
-pbgtest(between.model)
-```
 
 ## Blood Alcohol variable coefficient exploration
-All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest
-for the Within model and highest for the Between model.
+All the models are consistent in the negative sign of the Blood Alcohol variable coefficient. The Pooled OLS and Within models significance levels are higher compared to the First Difference and Between models. The standard errors are lowest for the Within model and highest for the Between model.
 
 ## Per se laws variable coefficient exploration
 Except for Between model all other models are consistent in the sign of the Per se law variable coefficient. Only Within model illustrates higher significance and larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
@@ -843,19 +829,32 @@ Except for Between model all other models are consistent in the sign of the Per 
 Except for Pooled OLS model all other models are consistent in the sign of the Primary seat-belt variable coefficient. Only Within model illustrates higher significance and Between model exhibits larger number for the coefficient. The standard errors are lowest for the Within model and highest for the Between model.
 
 ## Reliable model and the reason behind it
-First lets explore the assumptions for each of the models
+
+First lets explore the assumptions 
 
 A1- Linearity: the model is linear in parameters
 
 A2- i.i.d. : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
 
-A3- Indentifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
+A3- Identifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
 
 A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
   + $E(u_{it}x_{it})$ = 0
   + $E(x_{it}, \gamma_i)$ = 0
 
 A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
+
+For each models the assumptions that should hold true are
+
+**Pooled OLS Model Assumptions** - A1,A2,A3,A4
+**First Difference Estimator Assumptions** - A1,A2,A3,A5
+**Within Model Assumptions** - A1,A2,A3,A5
+**Between Model Assumptions** - A1,A2,A3,A5
+
+**A1** - Linearity: 
+residuals vs fitted
+corr matrix
+From the below Q-Qplot the residuals are approximately normally distributed for all the 4 models.
 
 ```{r tests}
 par(mfrow=c(2,2))
@@ -871,20 +870,25 @@ qqline(within.model$residuals)
 qqnorm(between.model$residuals)
 qqline(between.model$residuals)
 ```
-All 4 models
-A1 - Linearity: The linear model is giving residuals that are approximately normally distributed. 
 
-A2 - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
+**A2** - i.i.d: In the case of all models, except the "between" model we have 1200 data points where a single unit (state in this case) is measured multiple times (across 25 years). Clearly, measurement of a unit repeatedly is not independent. Thus, the 1200 observations are not IID.  That said, with 1200 data points we could argue that there are enough observations that are independent. Observations across states qualify for being independent. Observations within an unit across 25 years may also be independent across some of the years.
+
+**A3**- Identifiability:  
+Proof: The regressors are not perfectly collinear, including a constant
+
+Variance inflation factor (VIF) is a measure of the amount of multicollinearity in a set of multiple regression variables. A high VIF indicates that the associated independent variable is highly collinear with the other variables in the model. The below result illustrates low VIF (all below 8) the regressors are not perfectly collinear.  
+
+Multicollinearity should not be confused with a raw strong correlation between predictors. What matters is the association between one or more predictor variables, conditional on the other variables in the model. In a nutshell, multicollinearity means that once you know the effect of one predictor (bac08), the value of knowing the other predictor (bac10) is rather low. Thus, one of the predictors doesn't help much in terms of better understanding the model or predicting the outcome. As a consequence, if multicollinearity is a problem, the model seems to suggest that the predictors in question don't seems to be reliably associated with the outcome (low estimates, high standard errors), although these predictors actually are strongly associated with the outcome, i.e. indeed might have strong effect
 
 ```{r vif test}
-lm.model <- lm(total_fatality_rate ~ year + bac08 + bac10 + 
-                      adm_lic_revoc_law + primary_seatbelt_law + 
-                      secondary_seatbelt_law + sl75 + slnone + 
-                      grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
-                      log(unemployment_rate) + log(miles_driven_per_capita), 
-                    data=traffic_df)
-car::vif(pool.model)
-car::vif(lm.model)
+library(performance)
+check_collinearity(pool.model)
+```
+Proof: The regressor have non-zero variance and not too many extreme values (but constant)
+Based on the below variance information, the independent variables have non-zero 
+variance and not too many extreme values.
+
+```{r non-zero variance proof}
 var(traffic_df$bac08)
 var(traffic_df$bac10)
 var(traffic_df$adm_lic_revoc_law)
@@ -896,23 +900,28 @@ var(log(traffic_df$unemployment_rate))
 var(log(traffic_df$miles_driven_per_capita))
 ```
 
-A3- Indentifiability: The regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
 
-The independent variables have non-zero variance and not too many extreme values.
+**A4**- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
 
-
+Durbin-Watson and Breusch-Godfrey/Wooldridge test (with order 2) are used to validate this.
+  
 ```{r A4 test}
 pdwtest(pool.model)
+pbgtest(pool.model, order = 2)
+
 pdwtest(fd.model)
+pbgtest(fd.model, order = 2)
+
 pdwtest(within.model)
+pbgtest(within.model, order = 2)
+
 pdwtest(between.model)
+pbgtest(between.model, order = 2)
 ```
 
-A4- $x_it$ is uncorrelated with idiosyncratic error term $u_{it}$ and individual-specific effect $\gamma_i$ 
-  + $E(u_{it}x_{it})$ = 0
-  + $E(x_{it}, \gamma_i)$ = 0
-  
-We don’t have evidence to reject the null hypothesis of no serial correlation in the between and first difference models. We do have evidence to reject the null hypothesis of no serial correlation in the within and pooled OLS models. 
+We don’t have evidence to reject the null hypothesis of no serial correlation in the between models. We do have evidence to reject the null hypothesis of no serial correlation in the within and pooled OLS models. 
+For first difference estimator model, Durbin-Watson and Breusch-Godfrey/Wooldridge test shows contradictory results.
+
 
 ```{r check for exogenity}
 df <- traffic_df
@@ -940,27 +949,25 @@ ggplot(df_model, aes(x = year, y = covariance, col = variable)) + geom_point() +
 
 A5- Zero conditional (strict exogeneity) - The most important of these is that $\delta{u_i}$ is uncorrelated with $\delta{x_i}$. This assumption holds if the idiosyncratic error at each time t, $u_{it}$, is uncorrelated with the explanatory variable in both time periods. 
 
-
+## Verdict
 The pooled model simply applies an OLS estimate to the pooled data set where each individual i’s data is ordered from t = 1,...,T, and then vertically stacked. The pooled OLS estimator is consistent under assumptions $A1-A4$. 
  
 The fixed effects model is commonly applied to remove omitted variable bias in the case of unobserved individual characteristics. By estimating changes within a specific group (over time), all time-invariant differences between entities are controlled for. 
-
-The fixed effect model could be estimated using three estimation methods:
-
->Least Squares Dummy Variable Estimation (LSDV), First-difference Estimator (FD), and Fixed Effect or Within-groups Estimator (FE)
-
 All fixed effect estimation methods are consistent under the assumptions $A1,A2,A3,A5$
 
 Based on the above pFtest results, we reject the null hypothesis of no fixed effects. This means we **should include state and/or time fixed effects** in our model.
 
 OLS estimation treats all observations as if they come from the same state and fits the regression line accordingly. As a result, The regression results indicate a positive relationship between the beer tax and the fatality rate. This is contrary to our expectations: alcohol taxes are supposed to lower the rate of traffic fatalities. This counter-intuitive result is possibly due to omitted variable bias since the model does not include any other explanatory variable such as economic conditions.
 
+```{r Fixed Effect Tests}
+pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fe")
+pwfdtest(fd.model, data=dat, index=c("state","year"), h0="fd")
+pFtest(within.model, pool.model)
+```
+
 Based on the pFtest result, p-value of 2.2e-16, we reject the null hypothesis of no fixed effects. This means we should include state and/or time fixed effects in our model.
 
 Comparing both the Wooldridge's hypothesis tests, we see that the both the models (fd and fe) suffer from serial correlation. This suggests that both the models are not good and we need to fit a better model. For comparison purpose we can use Within model as the it has relatively better p-value.
-
-
-
 
 # (10 points) Consider a Random Effects Model 
 

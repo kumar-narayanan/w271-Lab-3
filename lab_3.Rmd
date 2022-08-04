@@ -5,7 +5,7 @@ output:
   bookdown::pdf_document2: default
 ---
 
-```{r load packages, inlcude=FALSE}
+```{r load packages, echo=FALSE, warning=FALSE, message=FALSE, inlcude=FALSE}
 library(broom)
 library(car)
 
@@ -330,7 +330,7 @@ hist(traffic_df$weekend_fatality_rate,
      main="Historgam: Weekend Fatality rate", xlab="Weekend Fatality rate")
 ```
 
-```{r histograms of outcome variables, echo=FALSE}
+```{r histograms of log of outcome variables, echo=FALSE}
 par(mfrow=c(3, 3))
 hist(log(traffic_df$total_fatalities), main="Historgam:Log(Total Fatality)", 
      xlab="Total Fatality")
@@ -368,8 +368,8 @@ box_st_1 <- traffic_pdf %>%
              y = total_fatalities)) +
   geom_boxplot() +
   labs(x = "State",  y = "Total Fatalities", 
-       title = "Box plot of Total Fatalities by State") 
-box_st_1 + theme(axis.text=element_text(size=5))
+       title = "Box plot of Total Fatalities by State") + 
+  theme(axis.text=element_text(size=5))
 
 box_st_2 <- traffic_pdf %>%
   group_by(state_code) %>%
@@ -377,8 +377,8 @@ box_st_2 <- traffic_pdf %>%
              y = total_fatality_rate)) +
   geom_boxplot() +
   labs(x = "State",  y = "Total Fatality rate", 
-       title = "Box plot of Total Fatalities rate by State")
-box_st_2 + theme(axis.text=element_text(size=5))
+       title = "Box plot of Total Fatalities rate by State") + 
+  theme(axis.text=element_text(size=5))
 
 box_st_3 <- traffic_pdf %>%
   group_by(year) %>%
@@ -395,8 +395,12 @@ box_st_4 <- traffic_pdf %>%
              y = total_fatality_rate)) +
   geom_boxplot() +
   labs(x = "Year",  y = "Total Fatality rate",
-       title = "Box plot of Total Fatality rate by Year")
-box_st_4 + theme(axis.text=element_text(size=5))
+       title = "Box plot of Total Fatality rate by Year") + 
+  theme(axis.text=element_text(size=5))
+
+grid.arrange(box_st_1, box_st_2, box_st_3, box_st_4, 
+             nrow = 4, ncol = 1, 
+             top=quote("Boxplot of Outcome Variables by Year"))
 ```
 
 **The box plots reveal what is generally to be expected. We see a higher number with California (CA) state, for total fatality, due to the high population and generally being a somewhat of a larger state where people need to drive moderate distances, outside of major cities like Los Angeles, San Francisco, and a few others. However, if we consider fatality rate, we see that states like New Jersey (NJ), Missouri (MO), and Wyoming (WY) are leading the pack.** 
@@ -488,6 +492,7 @@ grid.arrange(box_ex_1, box_ex_2, box_ex_3, box_ex_4, box_ex_5, box_ex_6,
              nrow = 6, ncol = 1, 
              top=quote("Boxplot of Explanatory Variables by State"))
 ```
+
 **We see from the box plots above, of the explanatory variables by state, CA has the highest population, mean unemployment rate is  very close among the states with a few outliers, and the miles traveled is led by CA, being a populous and a large state. However, the miles per-capita is being led by Wyoming. This is not entirely unexpected. A state as vast a Wyoming and with a smaller population people do drive a lot in Wyoming to get around. It is also a rural state where people don't find a lot of what they want nearby. Additionally, it's not uncommon to see animals and produce transported in smaller trucks from farms to markets. As for speed limits, it appears that that are just two average speed limits across states - 55mph and 65mph. We do see lower speed limits in Montana (MT). We also see higher speed limits of 70mph is some states. As highway quality and vehicle features improve we see higher speed limits.**
 
 ```{r ind variables boxplots by year, echo=FALSE, fig.height=10, fig.width=6}

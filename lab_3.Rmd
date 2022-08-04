@@ -979,16 +979,45 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
+We will start by setting the model and then testing the assumptions needed for the random effect model. 
+
 ```{r RE model start}
-re.model <- plm(total_fatality_rate ~ d81 + d82 + d83 + d84 + d85 + d86 + 
-                  d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + 
-                  d97 + d98 + d99 + d00 + d01 + d02 + d03 + d04 + bac08 + 
-                  bac10 + adm_lic_revoc_law + primary_seatbelt_law + 
+re.model <- plm(total_fatality_rate ~ year+bac10 + adm_lic_revoc_law + primary_seatbelt_law + 
                   secondary_seatbelt_law + sl75 + slnone + 
                   grad_drivers_lic_law + percent_pop_aged_14_to_24 + 
                   log(unemployment_rate) + log(miles_driven_per_capita), 
                 data=traffic.new.row, index=c("state", "year"), model="random")
 ```
+
+The first assumption of the random effects model is that there are no perfect linear relationships among the explanatory variables. 
+
+```{r}
+colin_data = traffic.new.row 
+colin_data$logmiles_driven = log(colin_data$miles_driven_per_capita)
+colin_data$logunemp = log(colin_data$unemployment_rate)
+
+colin_data = colin_data %>% select(year,adm_lic_revoc_law, primary_seatbelt_law,secondary_seatbelt_law,sl75,slnone,grad_drivers_lic_law, percent_pop_aged_14_to_24,logunemp, logmiles_driven)
+corrplot(cor(colin_data), method="color", number.cex=0.5, tl.cex=0.5, type='lower')
+```
+From the above correlation plot we see some concerning correlations, particularly between percent of population aged 14 to 24 and the year variable as well as the log of unemployment and the year. These high correlations may indicate multicollinearity (or if there is a perfect linear relationship between variables). 
+
+additionally, we will examine the Variance Inflation Factor matrix of the model for multicollinearity. 
+
+```{r}
+car::vif(re.model)
+```
+We see high values for year=(1995, 1996, 2000, 2003, 2004) percent_pop_aged_14_to_24, and log(miles_driven_per_capita) indicating the possible presence of multicollinearity in these variables. 
+
+Assessing our analysis of multicollinearity in the model explanatory variables, we have not provided sufficient evidence in supporting the lack of perfect multicollinearity between the variables as there are some strong correlations (linear relationships) between certain variables. 
+
+
+The second assumption is that there is no correlation between the unobserved effect (random and fixed effects) and the explanatory variables. Using a random effects model imposes the error structure that the error term $ v_{it} $ is equal to the sum of variation between groups and variation within groups onto the model residuals, allowing to properly specify the residuals and more efficiently estimate the coefficients of interest. This requires the assumption of independence between random effects and the other predictors in the model. 
+
+The assumptions for the fixed effect model are discussed above, the additional assumption of independence of random effects and other predictors in the model is evaluated below. 
+
+The test we run is the Hausman Test for fixed versus random effects. The null hypothesis is that the random effects model is acceptable while the alternative hypothesis is that there is correlation between residuals and predictors, meaning that we should use the FE model. 
+
+
 
 ```{r model comparison}
 phtest(between.model, re.model)
@@ -997,19 +1026,16 @@ phtest(between.model, re.model)
 
 The Hausman test results in a p-value of `phtest(between.model, re.model)$p.value` which is far above the standard 0.05 value used to determine statistical significance. In this case, we do not have support to reject the null hypothesis and are thus can assume that we should accept the null hypothesis that the random effects model is acceptable as both models are consistent, and we know that the random effects model is more efficient, and thus the preferable model to use. 
 
-We see statistical significance on the same variables as the fixed effects model, all statistically significant variables have the same sign in both models. The statistically insignificant models are secondary_seatbelt_law, slnone, and grad_drivers_lic_law. 
+The third assumption is that of homoskedastic errors, which we can test below using the Pesaran's CD test: 
 
-Interpreting the statistically significant coefficients: 
-- For each year indicator variable, this indicates that observing data in that year has the coefficient's effect on the total fatalities. The baseline (i.e., no indicator variable for year) is 1980. As we see that every coefficient for the year indicators are negative, we can interpret this as that, all else equal, years outside of 1980 are expected to have less total fatalities than 1980. 
-
-Interpretation of explanatory variables is tricky as they include both the within-entity and between-entity effects. The coefficients are interpreted as the effect of changing the year and the state indices by one unit on the total fatalities dependent variable. 
-
-```{r stargazer output, echo=FALSE}
-stargazer(between.model, re.model, omit.stat=c("adj.rsq", "f"), 
-          type="text", style="qje", column.labels = c("between", "re"))
+```{r}
+pcdtest(re.model)
 ```
+While the p-value is not statistically significant indicating that we do not have support to reject the null hypothesis in favor of the alternative hypothesis of cross-sectional dependence, we have already violated assumption 2 and likely assumption 1, and thus should not proceed with this model. 
 
-If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are uncorrelated with the predictors. If this is not the case, the error term will be affected. 
+Overall, the main assumption of the RE model, assumption 2, was violated by showing that the RE model is inconsistent. Additionally, there are concerns of multicollinearity in the data. From this, we will not proceed with estimating the random effects model. 
+
+If we were to inappropriately estimate a random effects model, we would be incorrectly assuming that the random effects and other predictors are independent of one another. This would lead to omitted variable bias as the correlation between the random effects and the explanatory variables of interest would not allow for accurate estimation of the coefficient. Standard errors will also be biased as we are assuming that the random effects, which are included in the error term, are incorrectly uncorrelated with the predictors - given that there is correlation, this will introduce bias into the standard errors. 
 
 # (10 points) Model Forecasts 
 
@@ -1098,8 +1124,14 @@ If there were serial correlation or heteroskedasticity in the idiosyncratic erro
 **Serial correlation or heteroskedasticity in the idiosyncratic errors will cause the standard errors for the model to be incorrect. CLT can be invoked for first-difference models (Wooldridge). However, for fixed effects models, this is not necessarily the case as we'll likely see AR(1) effects in the error terms. Unless the AR(1) is a random walk we'll have to account for the AR(1) correlation. In case of random walk the first difference will be white noise and thus can be worked around. Let us use the Breusch-Godfrey test to check for serial correlation.**
 
 ```{r pbg test for serial correlation}
-pbgtest(within.model)
+pbgtest(between.model)
 ```
 
-**The test reveals serial correlation - the p-value supports the alternate hypothesis of serial correlation. Thus the computed standard errors is likely to be inaccurate.**
+**The test reveals serial correlation - the p-value does not reject the null hypothesis of no serial correlation. Thus the computed standard errors is likely to not have serial correlation.**
+
+**Plotting the resideuals below we do not see a clear trend of divergence in errors across the index, helping support the above test that there is a lack of serial correlation in the model** 
+
+```{r}
+plot(between.model$residuals)
+```
 

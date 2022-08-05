@@ -7,9 +7,7 @@ output:
 ---
 
 ```{r load packages, echo=FALSE, warning=FALSE, message=FALSE, inlcude=FALSE}
-install.packages("broom", repos = "http://cran.us.r-project.org")
 library(broom)
-if(!"car"%in%rownames(installed.packages())) {install.packages("car")} 
 library(car)
 
 install.packages("corrplot")
@@ -75,6 +73,7 @@ In this lab, we are asking you to answer the following **causal** question:
 > **"Do changes in traffic laws affect traffic fatalities?"**  
 
 ```{r load data, echo = TRUE, warning=FALSE}
+#setwd("/home/rstudio/kumarn/MIDS/w271/w271-Lab-3")
 load(file="./data/driving.RData")
 
 # quick view of the data and its parameters
@@ -300,7 +299,7 @@ mtext("Fatality Rate by State", side = 3, line = 0.25, outer = TRUE, cex=0.8)
 
 * SD (South Dakota): There is an initial steep decrease followed by moderate upward trend.
 
-```{r histograms of outcome variables, echo=FALSE, fig.width=8, fig.height=12}
+```{r histograms of outcome variables, echo=FALSE}
 par(mfrow=c(3, 3))
 hist(traffic_df$total_fatalities, main="Historgam: Total Fatality", 
      xlab="Total Fatality")
@@ -406,7 +405,7 @@ grid.arrange(box_st_1, box_st_2, box_st_3, box_st_4,
 
 **We will now examine the histogram and box plots of the explanatory variables**
 
-```{r explanatory variables histogram, fig.width=8, fig.height=12, echo=FALSE}
+```{r explanatory variables histogram, echo=FALSE}
 par(mfrow=c(3, 3))
 hist(traffic_df$minage, main="Historgam: Minimum Age", 
      xlab="Age")
@@ -1159,7 +1158,7 @@ Now, use these changes in driving to make forecasts from your models.
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
 ```{r read new data, warning=FALSE}
-setwd("/home/rstudio/kumarn/MIDS/w271/Lab-3")
+#setwd("/home/rstudio/kumarn/MIDS/w271/w271-Lab-3")
 vehicle_miles <- read.csv('./data/vehiclemiles.csv')
 ```
 
